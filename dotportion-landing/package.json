@@ -1,0 +1,27 @@
+{
+  "name": "dotportion-landing-api",
+  "version": "1.0.0",
+  "description": "these apis are responsible for the landing page of dotportion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "npx nodemon run start"
+  },
+  "keywords": [],
+  "author": "sri charan",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-esbuild": "^1.55.1",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.16.4",
+    "nodemailer": "^7.0.5",
+    "winston": "^3.17.0"
+  }
+}
