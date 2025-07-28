@@ -1,0 +1,34 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
+        "email": "cognito@yopmail.com",
+        "name": "cognito"
+      }
+    },
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "httpMethod": "POST",
+  "pathParameters": {
+    "tenant": "cognito",
+    "projectId": "68836caf709af61cf2013959",
+    "path": "create-user"
+  },
+  "queryStringParameters": {
+    "limit": "10",
+    "page": "1",
+    "age": "30"
+  },
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "origin": "https://example.com"
+  },
+  "body": {
+    "name": "charan",
+    "email": "charantuts@gmail.com"
+  }
+}

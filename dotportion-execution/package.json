@@ -1,0 +1,31 @@
+{
+  "name": "dotportion-execution",
+  "version": "1.0.0",
+  "description": "Execution module for DotPortion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1000.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.18.0",
+    "mongoose": "^7.0.0",
+    "vm2": "^3.9.19"
+  },
+  "devDependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  },
+  "keywords": [
+    "workflow",
+    "lambda",
+    "serverless"
+  ],
+  "author": "sri charan",
+  "license": "ISC"
+}
