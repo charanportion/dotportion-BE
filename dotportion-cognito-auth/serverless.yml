@@ -1,0 +1,48 @@
+org: dotportion
+service: dotportion-cognito-auth
+custom:
+  prune:
+    automatic: true
+    number: 2
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+
+  # Environment variables will be available to all your functions
+  # It's highly recommended to use a service like AWS Secrets Manager for production
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+
+functions:
+  # Handles adding a user to the waitlist
+  postConfirmationTrigger:
+    handler: post-confimation.handler
+    timeout: 30
+
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+
+# This tells the packaging process to exclude the AWS SDK, which is already available in the Lambda environment.
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**

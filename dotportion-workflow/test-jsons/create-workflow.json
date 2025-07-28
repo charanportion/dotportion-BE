@@ -1,0 +1,55 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
+        "email": "cognito@yopmail.com",
+        "name": "cognito"
+      }
+    }
+  },
+  "pathParameters": {
+    "projectId": "68836caf709af61cf2013959"
+  },
+  "body": {
+    "name": "Sample Workflow",
+    "description": "A sample workflow for testing",
+    "method": "POST",
+    "path": "/api/sample",
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "start",
+        "data": {
+          "label": "Start"
+        },
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "id": "node-2",
+        "type": "http",
+        "data": {
+          "label": "HTTP Request",
+          "url": "https://api.example.com/data",
+          "method": "GET"
+        },
+        "position": {
+          "x": 300,
+          "y": 100
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "node-1",
+        "target": "node-2",
+        "sourceHandle": "output",
+        "targetHandle": "input"
+      }
+    ]
+  }
+}

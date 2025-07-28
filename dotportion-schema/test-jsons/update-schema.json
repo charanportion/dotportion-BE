@@ -1,0 +1,19 @@
+{
+  "body": {
+    "provider": "mongodb",
+    "collection": "users",
+    "schema": {
+      "name": { "type": "String", "required": true },
+      "email": { "type": "String", "required": true, "unique": true },
+      "age": { "type": "Number", "min": 0 },
+      "isActive": { "type": "Boolean", "default": true },
+      "createdAt": { "type": "Date", "default": "Date.now" },
+      "updatedAt": { "type": "Date", "default": "Date.now" }
+    }
+  },
+  "pathParameters": {
+    "tenant": "cognito",
+    "projectId": "68836caf709af61cf2013959",
+    "collection": "users"
+  }
+}

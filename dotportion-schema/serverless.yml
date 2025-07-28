@@ -1,0 +1,117 @@
+org: dotportion
+service: dotportion-schema-api
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+  domains:
+    dev: api-dev.dotportion.com
+    prod: api.dotportion.com
+  customDomain:
+    domainName: ${self:custom.domains.${self:provider.stage}}
+    stage: ${self:provider.stage}
+    createRoute53Record: false
+    basePath: "schemas"
+    endpointType: "regional"
+  cognito:
+    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+    BASE_URL: https://${self:custom.domains.${self:provider.stage}}
+
+functions:
+  createSchema:
+    handler: create-schema.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}
+          method: post
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getSchema:
+    handler: get-schema.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/{collection}
+          method: get
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  updateSchema:
+    handler: update-schema.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/{collection}
+          method: put
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  deleteSchema:
+    handler: delete-schema.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/{collection}
+          method: delete
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getAvailableCollections:
+    handler: get-available-collections.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/collections/all
+          method: get
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getCollectionParameters:
+    handler: get-collection-parameters.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/collections/{collection}/parameters
+          method: get
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getAllCollectionParameters:
+    handler: get-all-collection-parameters.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/collections/parameters
+          method: get
+          cors: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-domain-manager
+
+# This tells the packaging process to exclude the AWS SDK, which is already available in the Lambda environment.
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**

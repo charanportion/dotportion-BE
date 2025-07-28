@@ -1,0 +1,9 @@
+{
+  "pathParameters": {
+    "tenant": "cognito",
+    "projectId": "68836caf709af61cf2013959"
+  },
+  "queryStringParameters": {
+    "provider": "mongodb"
+  }
+}
