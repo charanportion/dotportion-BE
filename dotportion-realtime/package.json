@@ -1,0 +1,36 @@
+{
+  "name": "dotportion-workflow",
+  "version": "1.0.0",
+  "description": "Workflow management module for DotPortion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.857.0",
+    "@aws-sdk/client-dynamodb": "^3.857.0",
+    "@aws-sdk/client-sfn": "^3.857.0",
+    "@aws-sdk/lib-dynamodb": "^3.857.0",
+    "aws-sdk": "^2.1000.0",
+    "crypto": "^1.0.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.18.0",
+    "mongoose": "^7.0.0",
+    "vm2": "^3.9.19"
+  },
+  "devDependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  },
+  "keywords": [
+    "workflow",
+    "lambda",
+    "serverless"
+  ],
+  "author": "sri charan",
+  "license": "ISC"
+}

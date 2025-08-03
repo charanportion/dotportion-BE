@@ -1,0 +1,145 @@
+org: dotportion
+service: dotportion-realtime-api
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+  domains:
+    dev: api-dev.dotportion.com
+    prod: api.dotportion.com
+  customDomain:
+    domainName: ${self:custom.domains.${self:provider.stage}}
+    stage: ${self:provider.stage}
+    createRoute53Record: false
+    basePath: "realtime"
+    endpointType: "regional"
+  cognito:
+    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+  isOffline: false
+  serverless-offline:
+    httpPort: 3002
+    websocketPort: 3001
+    lambdaPort: 3004
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1 # Change to your preferred region
+  stage: ${opt:stage, 'dev'}
+
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+    WEBSOCKET_API_ID:
+      Ref: WebsocketsApi
+    STAGE: ${self:provider.stage}
+    ORCHESTRATOR_FUNCTION_NAME: ${self:service}-${self:provider.stage}-orchestrator
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    IS_OFFLINE: ${self:custom.isOffline}
+    LAMBDA_HTTP_PORT: ${self:custom.serverless-offline.lambdaPort}
+    WEBSOCKET_API_PORT: ${self:custom.serverless-offline.websocketPort}
+    NODE_ENV: ${self:provider.stage}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "logs:CreateLogGroup"
+        - "logs:CreateLogStream"
+        - "logs:PutLogEvents"
+      Resource: "arn:aws:logs:${aws:region}:${aws:accountId}:*"
+
+functions:
+  # HTTP endpoint to start the workflow
+  startWorkflow:
+    handler: startWorkflow.handler
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "lambda:InvokeFunction"
+        Resource: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:provider.environment.ORCHESTRATOR_FUNCTION_NAME}"
+    events:
+      - http:
+          path: /{projectId}/{tenant}/execute
+          method: post
+          # cors: true
+
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  # WebSocket connection handlers
+  connectionManager:
+    handler: connectionManager.handler
+    events:
+      - websocket:
+          route: $connect
+      - websocket:
+          route: $disconnect
+
+  # Default WebSocket handler (can be used for client->server messages if needed)
+  defaultHandler:
+    handler: connectionManager.default
+    events:
+      - websocket:
+          route: $default
+
+  orchestrator:
+    handler: orchestrator.handler
+    timeout: 900
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "execute-api:ManageConnections"
+        Resource:
+          - Fn::Sub: "arn:aws:execute-api:${aws:region}:${aws:accountId}:${WebsocketsApi}/*"
+
+resources:
+  Resources:
+    WebsocketsApi:
+      Type: AWS::ApiGatewayV2::Api
+      Properties:
+        Name: ${self:service}-websockets-${self:provider.stage}
+        ProtocolType: WEBSOCKET
+        RouteSelectionExpression: "$request.body.action"
+        Description: WebSocket API for real-time workflow execution
+
+  Outputs:
+    HttpApiUrl:
+      Description: "The URL for the HTTP API Gateway endpoint"
+      Value:
+        Fn::Sub: "https://${ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}"
+    WebsocketApiUrl:
+      Description: "The URL for the WebSocket API Gateway endpoint"
+      Value:
+        Fn::Sub: "wss://${WebsocketsApi}.execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}"
+    WebsocketApiId:
+      Description: "The WebSocket API ID"
+      Value:
+        Ref: WebsocketsApi
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-domain-manager
+
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**
