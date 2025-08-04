@@ -48,11 +48,27 @@ export class ProjectService {
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
-      const project = await this.ProjectModel.find({ owner: cognitoSub });
-      return project;
+      const projects = await this.ProjectModel.find({ owner: cognitoSub })
+        .populate({
+          path: "workflows",
+          select: "name method path",
+        })
+        .populate({
+          path: "secrets",
+          select: "provider",
+        })
+        .populate({
+          path: "stats.topWorkflows.workflowId",
+          select: "name method path",
+        });
+      return projects;
     } catch (error) {
-      this.logger.error("Error in getProjectByOwner service:", error);
-      return { error: true, message: "Error getting user" };
+      this.logger.error(`Error in getProjectByOwner service: ${error.message}`);
+      this.logger.error(`Error stack: ${error.stack}`);
+      return {
+        error: true,
+        message: `Error getProjectByOwner: ${error.message}`,
+      };
     }
   }
 
@@ -74,11 +90,23 @@ export class ProjectService {
       const project = await this.ProjectModel.findOne({
         _id: projectId,
         owner: cognitoSub,
-      });
+      })
+        .populate({
+          path: "workflows",
+          select: "name method path",
+        })
+        .populate({
+          path: "secrets",
+          select: "provider",
+        })
+        .populate({
+          path: "stats.topWorkflows.workflowId",
+          select: "name method path",
+        });
       return project;
     } catch (error) {
       this.logger.error("Error in getProjectById service:", error);
-      return { error: true, message: "Error getting user" };
+      return { error: true, message: "Error getProjectById" };
     }
   }
 
@@ -109,7 +137,7 @@ export class ProjectService {
       return project;
     } catch (error) {
       this.logger.error("Error in updateProject service:", error);
-      return { error: true, message: "Error updating user" };
+      return { error: true, message: "Error update Project" };
     }
   }
 
@@ -135,7 +163,7 @@ export class ProjectService {
       return project ? true : false;
     } catch (error) {
       this.logger.error("Error in deleteProject service:", error);
-      return { error: true, message: "Error getting user" };
+      return { error: true, message: "Error delete Project" };
     }
   }
 

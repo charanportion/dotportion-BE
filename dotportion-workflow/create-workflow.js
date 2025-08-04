@@ -1,4 +1,4 @@
-import { createDBHandler } from "/opt/nodejs/utils/db.js";
+ import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import UserModel from "/opt/nodejs/models/UserModel.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";

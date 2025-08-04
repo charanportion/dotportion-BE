@@ -44,7 +44,18 @@ functions:
       - http:
           path: /
           method: post
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
@@ -55,7 +66,18 @@ functions:
       - http:
           path: /
           method: get
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
@@ -66,7 +88,18 @@ functions:
       - http:
           path: /{projectId}
           method: get
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
@@ -77,7 +110,18 @@ functions:
       - http:
           path: /{projectId}
           method: post
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
@@ -88,7 +132,18 @@ functions:
       - http:
           path: /{projectId}
           method: delete
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
@@ -99,7 +154,18 @@ functions:
       - http:
           path: /{projectId}/analytics/calls-over-time
           method: get
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
