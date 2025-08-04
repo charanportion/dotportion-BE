@@ -59,24 +59,16 @@ export class NodeProcessor {
       mergePriority = ["params", "body", "query", "headers"],
     } = options;
 
+    logger.info(`Node data: ${JSON.stringify(node.data)}`);
+    logger.info(
+      `Options: strictMode=${strictMode}, caseSensitive=${caseSensitive}, mergePriority=${JSON.stringify(
+        mergePriority
+      )}`
+    );
+
     const mergedInput = {};
     const allErrors = [];
     const allCollectedParams = new Set();
-
-    // In serverless, adapt the input sources
-    const inputSources = {
-      body: requestContext.body?.input || requestContext.body || {},
-      params: requestContext.params || {},
-      query: requestContext.query || {},
-      headers: caseSensitive
-        ? requestContext.headers || {}
-        : Object.fromEntries(
-            Object.entries(requestContext.headers || {}).map(([k, v]) => [
-              k.toLowerCase(),
-              v,
-            ])
-          ),
-    };
 
     // Process each source in specified priority order
     for (const sourceConfig of mergePriority
@@ -89,39 +81,73 @@ export class NodeProcessor {
         mapping = {},
       } = sourceConfig;
 
-      const sourceInput = inputSources[from];
-      if (!sourceInput) continue;
+      logger.info(`Processing source: ${from}`);
+      logger.info(
+        `Source config: required=${JSON.stringify(
+          required
+        )}, validation=${JSON.stringify(validation)}, mapping=${JSON.stringify(
+          mapping
+        )}`
+      );
+
+      const { input } = requestContext.body;
+      const sourceInput = input;
+      logger.info(`Source input: ${JSON.stringify(sourceInput)}`);
+
+      const missingParams = required.filter((param) => {
+        const sourceParam = mapping[param] || param;
+        const hasParam = sourceParam in (sourceInput || {});
+        logger.info(
+          `Checking param: ${param} (source: ${sourceParam}) - exists: ${hasParam}`
+        );
+        return !hasParam;
+      });
+
+      if (missingParams.length > 0) {
+        logger.warn(
+          `Missing parameters in source ${from}: ${JSON.stringify(
+            missingParams
+          )}`
+        );
+        allErrors.push({
+          source: from,
+          type: "MISSING_PARAMS",
+          params: missingParams,
+          message: `Missing in body: ${missingParams.join(", ")}`,
+        });
+      }
 
       // Process parameter mapping
       const processedInput = {};
+
       const allowedKeys = new Set([
         ...required,
         ...Object.keys(validation),
         ...Object.keys(mapping),
       ]);
 
+      logger.info(
+        `Allowed keys for source ${from}: ${JSON.stringify([...allowedKeys])}`
+      );
+
       for (const key of allowedKeys) {
         const sourceKey = mapping[key] || key;
         if (sourceInput && sourceKey in sourceInput) {
           processedInput[key] = sourceInput[sourceKey];
           allCollectedParams.add(key);
+          logger.info(
+            `Mapped parameter: ${key} <- ${sourceKey} = ${JSON.stringify(
+              sourceInput[sourceKey]
+            )}`
+          );
+        } else {
+          logger.info(`Parameter not found: ${key} (source: ${sourceKey})`);
         }
       }
 
-      // Check for missing required parameters
-      const missingParams = required.filter((param) => {
-        const sourceParam = mapping[param] || param;
-        return !(sourceParam in (sourceInput || {}));
-      });
-
-      if (missingParams.length > 0) {
-        allErrors.push({
-          source: from,
-          type: "MISSING_PARAMS",
-          params: missingParams,
-          message: `Missing in ${from}: ${missingParams.join(", ")}`,
-        });
-      }
+      logger.info(
+        `Processed input for source ${from}: ${JSON.stringify(processedInput)}`
+      );
 
       // Validate parameters
       const validationErrors = [];
@@ -129,9 +155,22 @@ export class NodeProcessor {
         const sourceParam = mapping[param] || param;
         const value = processedInput[param];
 
-        if (value === undefined) return;
+        logger.info(
+          `Validating param: ${param} (source: ${sourceParam}) = ${JSON.stringify(
+            value
+          )}`
+        );
+        logger.info(`Validation rules: ${JSON.stringify(rules)}`);
+
+        if (value === undefined) {
+          logger.info(`Skipping validation for undefined param: ${param}`);
+          return;
+        }
 
         if (rules.regex && !new RegExp(rules.regex).test(value)) {
+          logger.warn(
+            `Regex validation failed for ${param}: value=${value}, regex=${rules.regex}`
+          );
           validationErrors.push({
             param,
             value,
@@ -141,6 +180,9 @@ export class NodeProcessor {
         }
 
         if (typeof rules.min === "number" && Number(value) < rules.min) {
+          logger.warn(
+            `Min validation failed for ${param}: value=${value}, min=${rules.min}`
+          );
           validationErrors.push({
             param,
             value,
@@ -150,6 +192,9 @@ export class NodeProcessor {
         }
 
         if (typeof rules.max === "number" && Number(value) > rules.max) {
+          logger.warn(
+            `Max validation failed for ${param}: value=${value}, max=${rules.max}`
+          );
           validationErrors.push({
             param,
             value,
@@ -163,6 +208,11 @@ export class NodeProcessor {
           Array.isArray(rules.enum) &&
           !rules.enum.includes(value)
         ) {
+          logger.warn(
+            `Enum validation failed for ${param}: value=${value}, enum=${JSON.stringify(
+              rules.enum
+            )}`
+          );
           validationErrors.push({
             param,
             value,
@@ -173,6 +223,11 @@ export class NodeProcessor {
       });
 
       if (validationErrors.length > 0) {
+        logger.warn(
+          `Validation errors for source ${from}: ${JSON.stringify(
+            validationErrors
+          )}`
+        );
         allErrors.push({
           source: from,
           type: "VALIDATION_FAILED",
@@ -182,10 +237,14 @@ export class NodeProcessor {
 
       // Merge with priority
       Object.assign(mergedInput, processedInput);
+      logger.info(
+        `Merged input after source ${from}: ${JSON.stringify(mergedInput)}`
+      );
     }
 
     // Strict mode validation
     if (strictMode) {
+      logger.info("Running strict mode validation");
       const allowedParams = new Set();
       sources.forEach((src) => {
         [
@@ -197,10 +256,22 @@ export class NodeProcessor {
           .forEach((p) => allowedParams.add(p));
       });
 
+      logger.info(
+        `Allowed params in strict mode: ${JSON.stringify([...allowedParams])}`
+      );
+      logger.info(
+        `Collected params: ${JSON.stringify([...allCollectedParams])}`
+      );
+
       const unexpectedParams = [...allCollectedParams].filter(
         (p) => !allowedParams.has(p)
       );
       if (unexpectedParams.length > 0) {
+        logger.warn(
+          `Unexpected parameters in strict mode: ${JSON.stringify(
+            unexpectedParams
+          )}`
+        );
         allErrors.push({
           type: "UNEXPECTED_PARAMS",
           params: unexpectedParams,
@@ -209,7 +280,15 @@ export class NodeProcessor {
       }
     }
 
+    logger.info(`Final merged input: ${JSON.stringify(mergedInput)}`);
+    logger.info(
+      `All collected params: ${JSON.stringify([...allCollectedParams])}`
+    );
+
     if (allErrors.length > 0) {
+      logger.error(
+        `Parameter processing failed with errors: ${JSON.stringify(allErrors)}`
+      );
       throw {
         type: ErrorTypes.PARAMETER_PROCESSING_FAILED,
         message: "Parameter validation failed",
@@ -218,6 +297,7 @@ export class NodeProcessor {
       };
     }
 
+    logger.info(`Parameters node processing completed successfully`);
     return mergedInput;
   }
 
