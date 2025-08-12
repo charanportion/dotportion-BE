@@ -1,0 +1,19 @@
+{
+  "name": "dotportion-cognito-auth",
+  "version": "1.0.0",
+  "description": "these apis are responsible for the cognito auth of dotportion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "npx nodemon run start"
+  },
+  "keywords": [],
+  "author": "sri charan",
+  "license": "ISC",
+  "dependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  }
+}

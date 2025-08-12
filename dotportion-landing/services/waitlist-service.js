@@ -25,7 +25,7 @@ export class WaitlistService {
       return result;
     } catch (error) {
       this.logger.error(error);
-      throw error;
+      return { error: true, message: "Error getting user" };
     }
   }
 }

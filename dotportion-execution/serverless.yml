@@ -1,0 +1,53 @@
+org: dotportion
+service: dotportion-execution-api
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+  domains:
+    dev: api-dev.dotportion.com
+    prod: api.dotportion.com
+  customDomain:
+    domainName: ${self:custom.domains.${self:provider.stage}}
+    stage: ${self:provider.stage}
+    createRoute53Record: false
+    basePath: "api"
+    endpointType: "regional"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+    BASE_URL: https://${self:custom.domains.${self:provider.stage}}
+
+functions:
+  executeWorkflow:
+    handler: execute-workflow.handler
+    events:
+      - http:
+          path: /{tenant}/{projectId}/{path+}
+          method: post
+          cors: true
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-domain-manager
+
+# This tells the packaging process to exclude the AWS SDK, which is already available in the Lambda environment.
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**

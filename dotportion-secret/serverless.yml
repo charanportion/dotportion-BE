@@ -1,0 +1,181 @@
+org: dotportion
+service: dotportion-secret-api
+
+custom:
+  prune:
+    automatic: true
+    number: 2
+  domains:
+    dev: api-dev.dotportion.com
+    prod: api.dotportion.com
+  customDomain:
+    domainName: ${self:custom.domains.${self:provider.stage}}
+    stage: ${self:provider.stage}
+    createRoute53Record: false
+    basePath: "secrets"
+    endpointType: "regional"
+  cognito:
+    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+    BASE_URL: https://${self:custom.domains.${self:provider.stage}}
+
+functions:
+  createSecret:
+    handler: create-secret.handler
+    events:
+      - http:
+          path: /projects/{projectId}
+          method: post
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getProjectSecrets:
+    handler: get-project-secrets.handler
+    events:
+      - http:
+          path: /projects/{projectId}
+          method: get
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getSecret:
+    handler: get-secret.handler
+    events:
+      - http:
+          path: /{secretId}
+          method: get
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  updateSecret:
+    handler: update-secret.handler
+    events:
+      - http:
+          path: /{secretId}
+          method: post
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  deleteSecret:
+    handler: delete-secret.handler
+    events:
+      - http:
+          path: /{secretId}
+          method: delete
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getSecretByProvider:
+    handler: get-secret-provider.handler
+    events:
+      - http:
+          path: /projects/{projectId}/provider/{provider}
+          method: get
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-domain-manager
+
+# This tells the packaging process to exclude the AWS SDK, which is already available in the Lambda environment.
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**

@@ -1,0 +1,27 @@
+{
+  "name": "dotportion-schema",
+  "version": "1.0.0",
+  "description": "schema management module for DotPortion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^7.0.0",
+    "mongodb": "^6.0.0"
+  },
+  "devDependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  },
+  "keywords": [
+    "schema",
+    "lambda",
+    "serverless"
+  ],
+  "author": "sri charan",
+  "license": "ISC"
+}

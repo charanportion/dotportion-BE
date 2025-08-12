@@ -1,0 +1,16 @@
+{
+  "triggerSource": "PostConfirmation_ConfirmSignUp",
+  "userPoolId": "ap-south-1_xxxxxxxxx",
+  "userName": "testuser",
+  "request": {
+    "userAttributes": {
+      "sub": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "email": "test@example.com",
+      "name": "Test User",
+      "given_name": "Test",
+      "family_name": "User",
+      "email_verified": "true"
+    }
+  },
+  "response": {}
+}
