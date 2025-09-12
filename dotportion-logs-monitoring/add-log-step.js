@@ -1,18 +1,13 @@
 import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
-import ProjectModel from "/opt/nodejs/models/ProjectModel.js";
 import ExecutionLogModel from "/opt/nodejs/models/ExecutionLog.js";
 // import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
 // import logger from "../layers/common/nodejs/utils/logger.js";
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
-// import ProjectModel from "../layers/common/nodejs/models/ProjectModel.js";
 // import ExecutionLogModel from "../layers/common/nodejs/models/ExecutionLog.js";
-// import WorkflowModel from "../layers/common/nodejs/models/WorkflowModel.js";
-// import SecretModel from "../layers/common/nodejs/models/SecretModel.js";
-import { ProjectService } from "./service/project-service.js";
-import { ProjectController } from "./controller/project-controller.js";
-import mongoose from "mongoose";
+import { LogService } from "./service/log-service.js";
+import { LogController } from "./controller/log-controller.js";
 
 const { MONGO_URI, MDataBase } = process.env;
 
@@ -20,21 +15,12 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    logger.info("received get Calls Over Time event:", JSON.stringify(event));
-    const projectService = new ProjectService(
-      dbHandler,
-      logger,
-      ProjectModel,
-      ExecutionLogModel,
-      mongoose
-    );
-    const projectController = new ProjectController(
-      projectService,
-      logger,
-      createResponse
-    );
+    logger.info("received addNodeStepToLog event:", JSON.stringify(event));
 
-    return projectController.getCallsOverTime(event);
+    const logService = new LogService(dbHandler, logger, ExecutionLogModel);
+    const logController = new LogController(logService, logger, createResponse);
+
+    return logController.addNodeStepToLog(event);
   } catch (err) {
     logger.error("--- UNHANDLED FATAL ERROR in handler ---", err);
     // This is a fallback error response.

@@ -1,0 +1,26 @@
+{
+  "pathParameters": {
+    "logId": "6898b8914e21d7a777452d6b"
+  },
+  "body": {
+    "stepData": {
+      "nodeId": "node_1a2b3c",
+      "nodeName": "Fetch User from DB",
+      "status": "success",
+      "startedAt": "2025-08-10T15:15:10.100Z",
+      "finishedAt": "2025-08-10T15:15:10.250Z",
+      "durationMs": 150,
+      "input": {
+        "userId": "usr_c4d5e6f7"
+      },
+      "output": {
+        "user": {
+          "id": "usr_c4d5e6f7",
+          "name": "Jane Doe",
+          "email": "jane.doe@example.com",
+          "createdAt": "2024-01-01T10:00:00Z"
+        }
+      }
+    }
+  }
+}

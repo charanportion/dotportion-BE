@@ -1,9 +1,9 @@
 export class ProjectService {
-  constructor(dbHandler, logger, ProjectModel, LogModel, mongoose) {
+  constructor(dbHandler, logger, ProjectModel, ExecutionLogModel, mongoose) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.ProjectModel = ProjectModel;
-    this.LogModel = LogModel;
+    this.ExecutionLogModel = ExecutionLogModel;
     this.mongoose = mongoose;
     this.logger.info(`-->Project Service initialized`);
   }
@@ -226,7 +226,7 @@ export class ProjectService {
         dateFormat = "%H:00"; // hour in 24h
       }
 
-      const result = await this.LogModel.aggregate([
+      const result = await this.ExecutionLogModel.aggregate([
         { $match: matchStage },
         {
           $group: {

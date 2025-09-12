@@ -14,12 +14,12 @@ export class WorkflowExecutor {
     this.nodeRegistry.set(type, node);
   }
 
-  async execute(workflow, req) {
+  async execute(workflow, req, logId) {
     const executionId = `exec_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
     console.log(
-      `[${executionId}] Starting workflow execution for workflow: ${workflow._id}`
+      `[${executionId}] Starting workflow execution for workflow: ${workflow._id}, logId: ${logId}`
     );
 
     const nodeMap = new Map(workflow.nodes.map((node) => [node.id, node]));
@@ -109,6 +109,9 @@ export class WorkflowExecutor {
           hasReq: !!req,
         });
 
+        const nodeStartTime = Date.now();
+        const startedAt = new Date().toISOString();
+        const nodeInput = input; // Capture the input before node execution
         input = await handler.call(
           this,
           currentNode,
@@ -117,6 +120,8 @@ export class WorkflowExecutor {
           context,
           workflow
         );
+        const nodeDurationMs = Date.now() - nodeStartTime;
+        const finishedAt = new Date().toISOString();
 
         context[currentNodeId] = { result: input };
         console.log(`[${executionId}] Node execution completed:`, {
@@ -124,7 +129,31 @@ export class WorkflowExecutor {
           nodeType: currentNode.type,
           hasResult: !!input,
           resultType: typeof input,
+          durationMs: nodeDurationMs,
         });
+
+        // Add step to execution log
+        if (logId) {
+          try {
+            this.addStepToLog(logId, {
+              nodeId: currentNodeId,
+              nodeType: currentNode.type,
+              nodeName: currentNode.name || currentNode.type,
+              status: "success",
+              startedAt,
+              finishedAt,
+              durationMs: nodeDurationMs,
+              input: nodeInput, // Use the input that was passed to this node
+              output: { result: input }, // Use the result after node execution
+            });
+          } catch (logError) {
+            console.error(
+              `[${executionId}] Failed to add step to log:`,
+              logError
+            );
+            // Don't fail execution if logging fails
+          }
+        }
 
         // console.log("Node execution result:", input);
 
@@ -185,6 +214,30 @@ export class WorkflowExecutor {
           error: err.message,
           stack: err.stack,
         });
+
+        // Add error step to execution log
+        if (logId) {
+          try {
+            const errorTimestamp = new Date().toISOString();
+            this.addStepToLog(logId, {
+              nodeId: currentNodeId,
+              nodeType: currentNode.type,
+              nodeName: currentNode.name || currentNode.type,
+              status: "error",
+              startedAt: errorTimestamp,
+              finishedAt: errorTimestamp,
+              durationMs: 0,
+              error: err.message,
+            });
+          } catch (logError) {
+            console.error(
+              `[${executionId}] Failed to add error step to log:`,
+              logError
+            );
+            // Don't fail execution if logging fails
+          }
+        }
+
         err.nodeId = currentNodeId;
         err.nodeType = currentNode.type;
         throw err;
@@ -940,5 +993,21 @@ export class WorkflowExecutor {
       currentItem,
       loopContext: context.loop,
     };
+  }
+
+  async addStepToLog(logId, stepData) {
+    try {
+      // Import StatsUpdater dynamically to avoid circular dependencies
+      const { StatsUpdater } = await import("../StatsUpdater.js");
+      const statsUpdater = new StatsUpdater();
+
+      await statsUpdater.addStep({
+        logId,
+        stepData,
+      });
+    } catch (error) {
+      console.error("Error adding step to log:", error);
+      // Don't throw error to avoid breaking workflow execution
+    }
   }
 }

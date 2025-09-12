@@ -4,14 +4,14 @@ export class DashboardService {
     logger,
     ProjectModel,
     WorkflowModel,
-    LogModel,
+    ExecutionLogModel,
     SecretModel
   ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.ProjectModel = ProjectModel;
     this.WorkflowModel = WorkflowModel;
-    this.LogModel = LogModel;
+    this.ExecutionLogModel = ExecutionLogModel;
     this.SecretModel = SecretModel;
     this.logger.info(`-->Dashboard Service initialized`);
   }
@@ -38,8 +38,8 @@ export class DashboardService {
       const projectIds = userProjects.map((p) => p._id);
 
       const [totalLogs, successLogs] = await Promise.all([
-        this.LogModel.countDocuments({ project: { $in: projectIds } }),
-        this.LogModel.countDocuments({
+        this.ExecutionLogModel.countDocuments({ project: { $in: projectIds } }),
+        this.ExecutionLogModel.countDocuments({
           project: { $in: projectIds },
           status: "success",
         }),
@@ -73,14 +73,14 @@ export class DashboardService {
       }).select("_id");
       const projectIds = userProjects.map((p) => p._id);
 
-      const result = await this.LogModel.aggregate([
+      const result = await this.ExecutionLogModel.aggregate([
         { $match: { project: { $in: projectIds } } },
         {
           $group: {
             _id: {
-              year: { $year: "$timestamp" },
-              month: { $month: "$timestamp" },
-              day: { $dayOfMonth: "$timestamp" },
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
             },
             totalCalls: { $sum: 1 },
           },
@@ -187,7 +187,7 @@ export class DashboardService {
       }).select("_id");
       const projectIds = userProjects.map((p) => p._id);
 
-      const result = await this.LogModel.aggregate([
+      const result = await this.ExecutionLogModel.aggregate([
         { $match: { project: { $in: projectIds } } },
         {
           $group: {
@@ -198,7 +198,7 @@ export class DashboardService {
       ]);
 
       const success = result.find((r) => r._id === "success")?.count || 0;
-      const failed = result.find((r) => r._id === "error")?.count || 0;
+      const failed = result.find((r) => r._id === "fail")?.count || 0;
 
       return { success, failed };
     } catch (error) {

@@ -3,14 +3,16 @@
 // import Log from "../layers/common/nodejs/models/LogModel.js";
 import Project from "/opt/nodejs/models/ProjectModel.js";
 import Workflow from "/opt/nodejs/models/WorkflowModel.js";
-import Log from "/opt/nodejs/models/LogModel.js";
+// import Log from "/opt/nodejs/models/LogModel.js";
 import mongoose from "mongoose";
 
 export class StatsUpdater {
-  /**
-   * Updates stats and logs for a workflow execution.
-   * @param {object} params - The details of the execution.
-   */
+  constructor() {
+    // Get API base URL from environment variable
+    this.API_BASE_URL =
+      process.env.BASE_URL || "https://api-dev.dotportion.com";
+  }
+
   async update({
     projectId,
     workflowId,
@@ -20,20 +22,23 @@ export class StatsUpdater {
     response,
   }) {
     // 1. Create a log entry (this is atomic)
-    await Log.create({
-      project: projectId,
-      workflow: workflowId,
-      status,
-      request,
-      response,
-      durationMs,
-    });
+    // await Log.create({
+    //   project: projectId,
+    //   workflow: workflowId,
+    //   status,
+    //   request,
+    //   response,
+    //   durationMs,
+    // });
+
+    // Map status for stats: "error" -> "fail", keep others as is
+    const statsStatus = status === "error" ? "fail" : status;
 
     // 2. Update workflow stats using atomic operators
-    await this.#updateWorkflowStats(workflowId, status, durationMs);
+    await this.#updateWorkflowStats(workflowId, statsStatus, durationMs);
 
     // 3. Update project stats
-    await this.#updateProjectStats(projectId, workflowId, status);
+    await this.#updateProjectStats(projectId, workflowId, statsStatus);
   }
 
   async #updateWorkflowStats(workflowId, status, durationMs) {
@@ -100,5 +105,98 @@ export class StatsUpdater {
         $set: { "stats.topWorkflows": topWorkflows },
       }
     );
+  }
+
+  async createLog({ workflowId, projectId, triggerData, userPlan }) {
+    try {
+      console.log(
+        `Creating log for workflow: ${workflowId}, project: ${projectId}`
+      );
+      const createResponse = await fetch(`${this.API_BASE_URL}/logs/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project: projectId,
+          workflow: workflowId,
+          trigger: triggerData,
+          plan: userPlan, // Pass the user's plan for retention calculation
+        }),
+      });
+
+      if (!createResponse.ok) {
+        console.error(
+          `Failed to create log: ${createResponse.status} ${createResponse.statusText}`
+        );
+        return null;
+      }
+
+      const log = await createResponse.json();
+      const logId = log?.data?._id;
+      console.log(`Log created successfully with ID: ${logId}`);
+      return logId;
+    } catch (error) {
+      console.error("Error creating log:", error);
+      return null;
+    }
+  }
+
+  async finalizeLog({ logId, status, durationMs, response }) {
+    try {
+      console.log(`Finalizing log: ${logId} with status: ${status}`);
+      const finalizeResponse = await fetch(
+        `${this.API_BASE_URL}/logs/${logId}/finalize`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status,
+            durationMs,
+            response,
+          }),
+        }
+      );
+
+      if (!finalizeResponse.ok) {
+        console.error(
+          `Failed to finalize log: ${finalizeResponse.status} ${finalizeResponse.statusText}`
+        );
+        return false;
+      }
+
+      console.log(`Log finalized successfully: ${logId}`);
+      return true;
+    } catch (error) {
+      console.error("Error finalizing log:", error);
+      return false;
+    }
+  }
+
+  async addStep({ logId, stepData }) {
+    try {
+      console.log(`Adding step to log: ${logId}`);
+      const stepResponse = await fetch(
+        `${this.API_BASE_URL}/logs/${logId}/steps`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepData,
+          }),
+        }
+      );
+
+      if (!stepResponse.ok) {
+        console.error(
+          `Failed to add step: ${stepResponse.status} ${stepResponse.statusText}`
+        );
+        return false;
+      }
+
+      console.log(`Step added successfully to log: ${logId}`);
+      return true;
+    } catch (error) {
+      console.error("Error adding step:", error);
+      return false;
+    }
   }
 }
