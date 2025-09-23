@@ -25,4 +25,23 @@ export class UserService {
       return { error: true, message: "Error getting user" };
     }
   }
+
+  async updateOnboarding(cognitoSub, onboardingData) {
+    try {
+      await this.dbHandler.connectDb();
+
+      const updatedUser = await this.userModel
+        .findOneAndUpdate(
+          { cognitoSub },
+          { $set: { onboarding: onboardingData } },
+          { new: true }
+        )
+        .select("-cognitoSub");
+
+      return updatedUser;
+    } catch (error) {
+      this.logger.error("Error updating onboarding:", error);
+      throw new Error("Failed to update onboarding");
+    }
+  }
 }

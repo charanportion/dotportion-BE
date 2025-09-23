@@ -43,18 +43,32 @@ functions:
     events:
       - http:
           path: /me
-          method: get
+          method: GET
           cors: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
+  updateOnboarding:
+    handler: update-onboarding.handler
+    timeout: 30
+    events:
+      - http:
+          path: /update-onboarding
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
 
 plugins:
   - serverless-offline
