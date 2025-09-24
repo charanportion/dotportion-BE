@@ -140,6 +140,112 @@ functions:
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
+  # Platform-specific handlers
+  getPlatformCollections:
+    handler: get-platform-collections.handler
+    events:
+      - http:
+          path: /platform/{tenant}/{projectId}/collections
+          method: GET
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  getPlatformData:
+    handler: get-platform-data.handler
+    events:
+      - http:
+          path: /platform/{tenant}/{projectId}/collections/{collectionName}
+          method: GET
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  createPlatformData:
+    handler: create-platform-data.handler
+    events:
+      - http:
+          path: /platform/{tenant}/{projectId}/collections/{collectionName}
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  updatePlatformData:
+    handler: update-platform-data.handler
+    events:
+      - http:
+          path: /platform/{tenant}/{projectId}/collections/{collectionName}/{documentId}
+          method: PUT
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
+  deletePlatformData:
+    handler: delete-platform-data.handler
+    events:
+      - http:
+          path: /platform/{tenant}/{projectId}/collections/{collectionName}/{documentId}
+          method: DELETE
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            arn: ${self:custom.cognito.userPoolArn}
+
 plugins:
   - serverless-offline
   - serverless-prune-plugin

@@ -4,6 +4,7 @@ import { NodeVM } from "vm2";
 import replaceDynamicValues from "./replaceDynamicValues.js";
 import { MongoClient } from "mongodb";
 import jwt from "jsonwebtoken";
+import { PlatformDatabaseHandler } from "./PlatformDatabaseHandler.js";
 
 export class NodeProcessor {
   #nodeRegistry;
@@ -22,6 +23,7 @@ export class NodeProcessor {
       this.processParametersNode.bind(this)
     );
     this.registerNodeHandler("logic", this.processLogicNode.bind(this));
+    this.registerNodeHandler("mongodb", this.processMongoDBNode.bind(this));
     this.registerNodeHandler("database", this.processDatabaseNode.bind(this));
     this.registerNodeHandler("response", this.processResponseNode.bind(this));
     this.registerNodeHandler(
@@ -350,7 +352,7 @@ export class NodeProcessor {
     }
   }
 
-  async processDatabaseNode(node, context, requestContext, executionContext) {
+  async processMongoDBNode(node, context, requestContext, executionContext) {
     logger.info(`Processing database node: ${node.id}`);
 
     const { tenant } = requestContext.params;
@@ -472,6 +474,77 @@ export class NodeProcessor {
       };
     } finally {
       await client.close();
+    }
+  }
+
+  async processDatabaseNode(node, context, requestContext, executionContext) {
+    logger.info(`Processing database node: ${node.id}`);
+
+    const { tenant } = requestContext.params;
+    const {
+      collection,
+      operation,
+      data = {},
+      query = {},
+      options = {},
+    } = node.data;
+
+    if (!collection || !operation) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing collection or operation",
+      };
+    }
+
+    if (!tenant) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing tenant in node or input",
+      };
+    }
+
+    // Use platform MongoDB connection with schema management
+    const platformUri = process.env.MONGO_URI;
+    if (!platformUri) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Platform MongoDB URI not configured",
+      };
+    }
+
+    const dbHandler = new PlatformDatabaseHandler(platformUri);
+
+    try {
+      await dbHandler.connect(tenant);
+
+      // Ensure collection exists (will auto-create test or check schema for others)
+      await dbHandler.ensureCollectionExists(collection, tenant);
+
+      const resolvedFilter = replaceDynamicValues(
+        query,
+        context,
+        executionContext
+      );
+      const resolvedData = replaceDynamicValues(data, context, executionContext);
+
+      // Execute operation with schema validation
+      const result = await dbHandler.executeOperation(
+        operation,
+        collection,
+        resolvedFilter,
+        resolvedData,
+        options
+      );
+
+      return result;
+    } catch (err) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: err.message || "Platform database operation failed",
+        originalError: err.toString(),
+      };
+    } finally {
+      await dbHandler.close();
     }
   }
 

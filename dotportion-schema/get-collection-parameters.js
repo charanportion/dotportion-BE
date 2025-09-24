@@ -9,6 +9,7 @@ import SecretModel from "/opt/nodejs/models/SecretModel.js";
 import { SchemaService } from "./service/schema-service.js";
 import { SchemaController } from "./controller/schema-controller.js";
 import { MongoSchemaHandler } from "./service/mongo-schema-handler.js";
+import { PlatformSchemaHandler } from "./service/platform-schema-handler.js";
 
 const { MONGO_URI, MDataBase } = process.env;
 
@@ -24,7 +25,8 @@ export const handler = async (event) => {
       dbHandler,
       logger,
       SecretModel,
-      MongoSchemaHandler
+      MongoSchemaHandler,
+      PlatformSchemaHandler
     );
     const schemaController = new SchemaController(
       schemaService,

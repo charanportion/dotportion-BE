@@ -3,6 +3,7 @@ import { ErrorTypes } from "../utils/errors.js";
 import replaceDynamicValues from "../utils/replaceDynamicValues.js";
 import { MongoClient } from "mongodb";
 import jwt from "jsonwebtoken";
+import { PlatformDatabaseHandler } from "../utils/PlatformDatabaseHandler.js";
 
 export class WorkflowExecutor {
   constructor(secretService) {
@@ -290,6 +291,10 @@ export class WorkflowExecutor {
     return await this.processLogicNode(node, input, req, context);
   }
 
+  async handleMongoDBNode(node, input, req, context, workflow) {
+    return await this.processMongoDBNode(node, input, req, context, workflow);
+  }
+
   async handleDatabaseNode(node, input, req, context, workflow) {
     return await this.processDatabaseNode(node, input, req, context, workflow);
   }
@@ -327,6 +332,7 @@ export class WorkflowExecutor {
       this.handleParametersNode.bind(this)
     );
     this.registerNodeHandler("logic", this.handleLogicNode.bind(this));
+    this.registerNodeHandler("mongodb", this.handleMongoDBNode.bind(this));
     this.registerNodeHandler("database", this.handleDatabaseNode.bind(this));
     this.registerNodeHandler("response", this.handleResponseNode.bind(this));
     this.registerNodeHandler(
@@ -569,7 +575,7 @@ export class WorkflowExecutor {
     }
   }
 
-  async processDatabaseNode(
+  async processMongoDBNode(
     node,
     input,
     req,
@@ -708,6 +714,78 @@ export class WorkflowExecutor {
       };
     } finally {
       await client.close();
+    }
+  }
+
+  async processDatabaseNode(
+    node,
+    input,
+    req,
+    context,
+    workflow,
+    isRealTime = false
+  ) {
+    const { tenant } = req.params;
+    const {
+      collection,
+      operation,
+      data = {},
+      query = {},
+      options = {},
+    } = node.data;
+
+    if (!collection || !operation) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing collection or operation",
+      };
+    }
+
+    if (!tenant) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing tenant in node or input",
+      };
+    }
+
+    // Use platform MongoDB connection with schema management
+    const platformUri = process.env.MONGO_URI;
+    if (!platformUri) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Platform MongoDB URI not configured",
+      };
+    }
+
+    const dbHandler = new PlatformDatabaseHandler(platformUri);
+
+    try {
+      await dbHandler.connect(tenant);
+
+      // Ensure collection exists (will auto-create test or check schema for others)
+      await dbHandler.ensureCollectionExists(collection, tenant);
+
+      const resolvedFilter = replaceDynamicValues(query, input, context);
+      const resolvedData = replaceDynamicValues(data, input, context);
+
+      // Execute operation with schema validation
+      const result = await dbHandler.executeOperation(
+        operation,
+        collection,
+        resolvedFilter,
+        resolvedData,
+        options
+      );
+
+      return result;
+    } catch (err) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: err.message || "Platform database operation failed",
+        originalError: err.toString(),
+      };
+    } finally {
+      await dbHandler.close();
     }
   }
 

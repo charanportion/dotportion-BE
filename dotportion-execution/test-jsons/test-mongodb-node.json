@@ -1,0 +1,104 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
+        "email": "testuser@yopmail.com",
+        "name": "testuser"
+      }
+    },
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "httpMethod": "POST",
+  "pathParameters": {
+    "tenant": "testuser",
+    "projectId": "68836caf709af61cf2013959",
+    "path": "test-mongodb"
+  },
+  "queryStringParameters": {
+    "limit": "10"
+  },
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "origin": "https://example.com"
+  },
+  "body": {
+    "name": "Test User",
+    "email": "test@example.com",
+    "age": 25
+  },
+  "testWorkflow": {
+    "_id": "test-mongodb-workflow",
+    "nodes": [
+      {
+        "id": "start-1",
+        "type": "apiStart",
+        "data": {}
+      },
+      {
+        "id": "params-1",
+        "type": "parameters",
+        "data": {
+          "sources": [
+            {
+              "from": "body",
+              "required": ["name", "email"],
+              "validation": {
+                "email": {
+                  "regex": "^[^@]+@[^@]+\\.[^@]+$",
+                  "message": "Invalid email format"
+                },
+                "age": {
+                  "min": 18,
+                  "max": 100
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "mongodb-1",
+        "type": "mongodb",
+        "data": {
+          "collection": "users",
+          "provider": "mongodb",
+          "operation": "insertOne",
+          "data": {
+            "name": "{{input.name}}",
+            "email": "{{input.email}}",
+            "age": "{{input.age}}",
+            "createdAt": "{{new Date()}}"
+          }
+        }
+      },
+      {
+        "id": "response-1",
+        "type": "response",
+        "data": {
+          "status": 201
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "start-1",
+        "target": "params-1"
+      },
+      {
+        "id": "edge-2",
+        "source": "params-1",
+        "target": "mongodb-1"
+      },
+      {
+        "id": "edge-3",
+        "source": "mongodb-1",
+        "target": "response-1"
+      }
+    ]
+  }
+}

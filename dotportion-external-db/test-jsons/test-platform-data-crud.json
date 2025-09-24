@@ -11,24 +11,27 @@
       "sourceIp": "127.0.0.1"
     }
   },
-  "httpMethod": "POST",
+  "httpMethod": "GET",
   "pathParameters": {
     "tenant": "cognito",
     "projectId": "68836caf709af61cf2013959",
-    "path": "create-user"
+    "collectionName": "users"
   },
   "queryStringParameters": {
-    "limit": "10",
     "page": "1",
-    "age": 30
+    "limit": "10"
   },
   "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "origin": "https://example.com"
+    "Content-Type": "application/json"
   },
   "body": {
-    "name": "charan",
-    "email": "charantuts@gmail.com"
+    "message": "Hello from platform database test",
+    "userId": "user123",
+    "timestamp": "2024-01-15T10:00:00Z",
+    "metadata": {
+      "source": "platform-test",
+      "version": "1.0"
+    },
+    "tags": ["test", "platform", "database"]
   }
 }

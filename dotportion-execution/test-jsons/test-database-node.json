@@ -1,0 +1,120 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
+        "email": "testuser@yopmail.com",
+        "name": "testuser"
+      }
+    },
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "httpMethod": "POST",
+  "pathParameters": {
+    "tenant": "testuser",
+    "projectId": "68836caf709af61cf2013959",
+    "path": "test-platform-database"
+  },
+  "queryStringParameters": {
+    "limit": "10"
+  },
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "origin": "https://example.com"
+  },
+  "body": {
+    "message": "Hello from platform database",
+    "timestamp": "2024-01-15T10:00:00Z",
+    "userId": "user123"
+  },
+  "testWorkflow": {
+    "_id": "test-database-workflow",
+    "nodes": [
+      {
+        "id": "start-1",
+        "type": "apiStart",
+        "data": {}
+      },
+      {
+        "id": "params-1",
+        "type": "parameters",
+        "data": {
+          "sources": [
+            {
+              "from": "body",
+              "required": ["message", "userId"],
+              "validation": {
+                "message": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "database-1",
+        "type": "database",
+        "data": {
+          "collection": "test",
+          "operation": "insertOne",
+          "data": {
+            "message": "{{input.message}}",
+            "timestamp": "{{input.timestamp}}",
+            "userId": "{{input.userId}}",
+            "processedAt": "{{new Date().toISOString()}}"
+          }
+        }
+      },
+      {
+        "id": "database-2",
+        "type": "database",
+        "data": {
+          "collection": "test",
+          "operation": "findMany",
+          "query": {
+            "userId": "{{input.userId}}"
+          },
+          "options": {
+            "limit": 5
+          }
+        }
+      },
+      {
+        "id": "response-1",
+        "type": "response",
+        "data": {
+          "status": 200
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "start-1",
+        "target": "params-1"
+      },
+      {
+        "id": "edge-2",
+        "source": "params-1",
+        "target": "database-1"
+      },
+      {
+        "id": "edge-3",
+        "source": "database-1",
+        "target": "database-2"
+      },
+      {
+        "id": "edge-4",
+        "source": "database-2",
+        "target": "response-1"
+      }
+    ]
+  }
+}
