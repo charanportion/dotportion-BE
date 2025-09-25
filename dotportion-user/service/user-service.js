@@ -30,6 +30,11 @@ export class UserService {
     try {
       await this.dbHandler.connectDb();
 
+      const update = {};
+      for (const [key, value] of Object.entries(profileData)) {
+        update[`profile.${key}`] = value;
+      }
+
       const updatedUser = await this.userModel
         .findOneAndUpdate({ cognitoSub }, { $set: update }, { new: true })
         .select("-cognitoSub");
