@@ -40,9 +40,9 @@ export class UserController {
     }
   }
 
-  async updateOnboarding(event) {
+  async updateUserProfile(event) {
     try {
-      this.logger.info("--> updateOnboarding controller invoked");
+      this.logger.info("--> updateUserProfile controller invoked");
 
       const cognitoSub = event.requestContext.authorizer.claims.sub;
       if (!cognitoSub) {
@@ -57,21 +57,21 @@ export class UserController {
           : event.body || {};
       if (!body || Object.keys(body).length === 0) {
         return this.createResponse(400, {
-          message: "Onboarding data is required.",
+          message: "Profile data is required.",
         });
       }
 
-      const updatedUser = await this.userService.updateOnboarding(
+      const updatedUser = await this.userService.updateUserProfile(
         cognitoSub,
         body
       );
 
       return this.createResponse(200, {
-        message: "Onboarding updated successfully",
+        message: "User profile updated successfully",
         user: updatedUser,
       });
     } catch (error) {
-      this.logger.error("Error in updateOnboarding:", error);
+      this.logger.error("Error in updateUserProfile:", error);
       console.log(error);
       return this.createResponse(500, { message: "Internal server error." });
     }

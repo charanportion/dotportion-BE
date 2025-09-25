@@ -9,10 +9,7 @@
     }
   },
   "body": {
-    "role": "Developer",
-    "company_size": "11-50",
-    "referral_source": "Social Media",
-    "goals": ["Learn API", "Integrate app"],
-    "experience_level": "Intermediate"
+    "tools": ["Nodejs", "Cypress"],
+    "experience_level": "Intrermediate"
   }
 }

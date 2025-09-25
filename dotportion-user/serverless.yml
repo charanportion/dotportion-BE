@@ -48,12 +48,12 @@ functions:
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
 
-  updateOnboarding:
-    handler: update-onboarding.handler
+  updateUser:
+    handler: update-userprofile.handler
     timeout: 30
     events:
       - http:
-          path: /update-onboarding
+          path: /update
           method: POST
           cors:
             origins:
@@ -69,6 +69,14 @@ functions:
             allowCredentials: true
           authorizer:
             arn: ${self:custom.cognito.userPoolArn}
+
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
 
 plugins:
   - serverless-offline

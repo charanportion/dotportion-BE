@@ -2,7 +2,6 @@ import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
 import UserModel from "/opt/nodejs/models/UserModel.js";
-// import UserModel from "../layers/common/nodejs/models/UserModel.js";
 
 // import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
 // import UserModel from "../layers/common/nodejs/models/UserModel.js";
@@ -16,7 +15,7 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    logger.info("Received update onboarding event:", JSON.stringify(event));
+    logger.info("Received update user profile event:", JSON.stringify(event));
     const userService = new UserService(dbHandler, logger, UserModel);
     const userController = new UserController(
       userService,
@@ -24,7 +23,7 @@ export const handler = async (event) => {
       createResponse
     );
 
-    return await userController.updateOnboarding(event);
+    return await userController.updateUserProfile(event);
   } catch (error) {
     logger.error("--- UNHANDLED FATAL ERROR in handler ---", error);
     return {

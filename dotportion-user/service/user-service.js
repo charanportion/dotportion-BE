@@ -26,22 +26,18 @@ export class UserService {
     }
   }
 
-  async updateOnboarding(cognitoSub, onboardingData) {
+  async updateUserProfile(cognitoSub, profileData) {
     try {
       await this.dbHandler.connectDb();
 
       const updatedUser = await this.userModel
-        .findOneAndUpdate(
-          { cognitoSub },
-          { $set: { onboarding: onboardingData } },
-          { new: true }
-        )
+        .findOneAndUpdate({ cognitoSub }, { $set: update }, { new: true })
         .select("-cognitoSub");
 
       return updatedUser;
     } catch (error) {
-      this.logger.error("Error updating onboarding:", error);
-      throw new Error("Failed to update onboarding");
+      this.logger.error("Error updating user profile:", error);
+      throw new Error("Failed to update user profile");
     }
   }
 }
