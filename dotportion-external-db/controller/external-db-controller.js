@@ -16,6 +16,15 @@ export class ExternalDbController {
     return this.dbProviderFactory.createProvider(secret);
   }
 
+  async _getPlatformProvider(tenant) {
+    // Create a mock secret for platform provider
+    const platformSecret = {
+      provider: "platform",
+      data: {},
+    };
+    return this.dbProviderFactory.createProvider(platformSecret, tenant);
+  }
+
   async getCollections(event) {
     try {
       this.logger.info(`--> event getCollections: ${JSON.stringify(event)}`);
@@ -145,6 +154,162 @@ export class ExternalDbController {
       this.logger.error("Error in deleteDocument controller:", error);
       return this.createResponse(500, {
         message: "Failed to delete document.",
+        error: error.message,
+      });
+    }
+  }
+
+  // Platform database methods
+  async getPlatformCollections(event) {
+    try {
+      this.logger.info(
+        `--> event getPlatformCollections: ${JSON.stringify(event)}`
+      );
+      const { tenant, projectId } = event.pathParameters;
+
+      if (!tenant || !projectId) {
+        return this.createResponse(400, {
+          message:
+            "Tenant and projectId are required for platform database access",
+        });
+      }
+
+      const provider = await this._getPlatformProvider(tenant);
+      const collections = await provider.listCollections();
+
+      return this.createResponse(200, {
+        collections,
+        dbType: "platform",
+        tenant,
+      });
+    } catch (error) {
+      this.logger.error("Error in getPlatformCollections controller:", error);
+      return this.createResponse(500, {
+        message: "Failed to get platform collections.",
+        error: error.message,
+      });
+    }
+  }
+
+  async getPlatformDocuments(event) {
+    try {
+      const { tenant, projectId, collectionName } = event.pathParameters;
+      const { page, limit } = event.queryStringParameters || {};
+
+      if (!tenant || !projectId || !collectionName) {
+        return this.createResponse(400, {
+          message: "Tenant, projectId, and collectionName are required",
+        });
+      }
+
+      const provider = await this._getPlatformProvider(tenant);
+      const data = await provider.getDocuments(collectionName, { page, limit });
+      return this.createResponse(200, data);
+    } catch (error) {
+      this.logger.error("Error in getPlatformDocuments controller:", error);
+      return this.createResponse(500, {
+        message: "Failed to get platform documents.",
+        error: error.message,
+      });
+    }
+  }
+
+  async createPlatformDocument(event) {
+    try {
+      const { tenant, projectId, collectionName } = event.pathParameters;
+      const body =
+        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
+      if (!tenant || !projectId || !collectionName) {
+        return this.createResponse(400, {
+          message: "Tenant, projectId, and collectionName are required",
+        });
+      }
+
+      const provider = await this._getPlatformProvider(tenant);
+      const newDocument = await provider.createDocument(collectionName, body);
+
+      if (newDocument.error) {
+        return this.createResponse(400, newDocument);
+      }
+
+      return this.createResponse(201, newDocument);
+    } catch (error) {
+      this.logger.error("Error in createPlatformDocument controller:", error);
+      return this.createResponse(500, {
+        message: "Failed to create platform document.",
+        error: error.message,
+      });
+    }
+  }
+
+  async updatePlatformDocument(event) {
+    try {
+      const { tenant, projectId, collectionName, documentId } =
+        event.pathParameters;
+      const body =
+        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
+      if (!tenant || !projectId || !collectionName || !documentId) {
+        return this.createResponse(400, {
+          message:
+            "Tenant, projectId, collectionName, and documentId are required",
+        });
+      }
+
+      const provider = await this._getPlatformProvider(tenant);
+      const updatedDocument = await provider.updateDocument(
+        collectionName,
+        documentId,
+        body
+      );
+
+      if (!updatedDocument) {
+        return this.createResponse(404, {
+          message: "Document not found in platform database.",
+        });
+      }
+
+      return this.createResponse(200, updatedDocument);
+    } catch (error) {
+      this.logger.error("Error in updatePlatformDocument controller:", error);
+      return this.createResponse(500, {
+        message: "Failed to update platform document.",
+        error: error.message,
+      });
+    }
+  }
+
+  async deletePlatformDocument(event) {
+    try {
+      const { tenant, projectId, collectionName, documentId } =
+        event.pathParameters;
+
+      if (!tenant || !projectId || !collectionName || !documentId) {
+        return this.createResponse(400, {
+          message:
+            "Tenant, projectId, collectionName, and documentId are required",
+        });
+      }
+
+      const provider = await this._getPlatformProvider(tenant);
+      const result = await provider.deleteDocument(collectionName, documentId);
+
+      if (result.deletedCount === 0) {
+        return this.createResponse(404, {
+          message: "Document not found in platform database.",
+        });
+      }
+
+      return this.createResponse(200, {
+        status: "success",
+        message: "Platform document deleted successfully.",
+        ...result,
+      });
+    } catch (error) {
+      this.logger.error("Error in deletePlatformDocument controller:", error);
+      return this.createResponse(500, {
+        message: "Failed to delete platform document.",
         error: error.message,
       });
     }
