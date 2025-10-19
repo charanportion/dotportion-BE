@@ -209,7 +209,7 @@ functions:
     events:
       - http:
           path: /platform/{tenant}/{projectId}/collections/{collectionName}/{documentId}
-          method: PUT
+          method: POST
           cors:
             origins:
               - "http://localhost:3000" # For local development

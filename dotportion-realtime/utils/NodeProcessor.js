@@ -78,31 +78,49 @@ export class NodeProcessor {
       .filter(Boolean)) {
       const {
         from,
-        required = [],
-        validation = {},
-        mapping = {},
+        parameters = {},
+        // required = [],
+        // validation = {},
+        // mapping = {},
       } = sourceConfig;
 
       logger.info(`Processing source: ${from}`);
-      logger.info(
-        `Source config: required=${JSON.stringify(
-          required
-        )}, validation=${JSON.stringify(validation)}, mapping=${JSON.stringify(
-          mapping
-        )}`
-      );
+      // logger.info(
+      //   `Source config: required=${JSON.stringify(
+      //     required
+      //   )}, validation=${JSON.stringify(validation)}, mapping=${JSON.stringify(
+      //     mapping
+      //   )}`
+      // );
 
       const { input } = requestContext.body;
       const sourceInput = input;
       logger.info(`Source input: ${JSON.stringify(sourceInput)}`);
 
-      const missingParams = required.filter((param) => {
-        const sourceParam = mapping[param] || param;
-        const hasParam = sourceParam in (sourceInput || {});
-        logger.info(
-          `Checking param: ${param} (source: ${sourceParam}) - exists: ${hasParam}`
-        );
-        return !hasParam;
+      const missingParams = [];
+      const processedInput = {};
+
+      // const missingParams = required.filter((param) => {
+      //   const sourceParam = mapping[param] || param;
+      //   const hasParam = sourceParam in (sourceInput || {});
+      //   logger.info(
+      //     `Checking param: ${param} (source: ${sourceParam}) - exists: ${hasParam}`
+      //   );
+      //   return !hasParam;
+      // });
+
+      Object.entries(parameters).forEach(([paramName, paramConfig]) => {
+        const { required = false } = paramConfig;
+        const value = sourceInput?.[paramName];
+
+        // Check if parameter exists
+        if (value !== undefined) {
+          processedInput[paramName] = value;
+          allCollectedParams.add(paramName);
+        } else if (required) {
+          // Parameter is required but missing
+          missingParams.push(paramName);
+        }
       });
 
       if (missingParams.length > 0) {
@@ -116,124 +134,6 @@ export class NodeProcessor {
           type: "MISSING_PARAMS",
           params: missingParams,
           message: `Missing in body: ${missingParams.join(", ")}`,
-        });
-      }
-
-      // Process parameter mapping
-      const processedInput = {};
-
-      const allowedKeys = new Set([
-        ...required,
-        ...Object.keys(validation),
-        ...Object.keys(mapping),
-      ]);
-
-      logger.info(
-        `Allowed keys for source ${from}: ${JSON.stringify([...allowedKeys])}`
-      );
-
-      for (const key of allowedKeys) {
-        const sourceKey = mapping[key] || key;
-        if (sourceInput && sourceKey in sourceInput) {
-          processedInput[key] = sourceInput[sourceKey];
-          allCollectedParams.add(key);
-          logger.info(
-            `Mapped parameter: ${key} <- ${sourceKey} = ${JSON.stringify(
-              sourceInput[sourceKey]
-            )}`
-          );
-        } else {
-          logger.info(`Parameter not found: ${key} (source: ${sourceKey})`);
-        }
-      }
-
-      logger.info(
-        `Processed input for source ${from}: ${JSON.stringify(processedInput)}`
-      );
-
-      // Validate parameters
-      const validationErrors = [];
-      Object.entries(validation).forEach(([param, rules]) => {
-        const sourceParam = mapping[param] || param;
-        const value = processedInput[param];
-
-        logger.info(
-          `Validating param: ${param} (source: ${sourceParam}) = ${JSON.stringify(
-            value
-          )}`
-        );
-        logger.info(`Validation rules: ${JSON.stringify(rules)}`);
-
-        if (value === undefined) {
-          logger.info(`Skipping validation for undefined param: ${param}`);
-          return;
-        }
-
-        if (rules.regex && !new RegExp(rules.regex).test(value)) {
-          logger.warn(
-            `Regex validation failed for ${param}: value=${value}, regex=${rules.regex}`
-          );
-          validationErrors.push({
-            param,
-            value,
-            rule: "regex",
-            message: rules.message || `${param} failed format validation`,
-          });
-        }
-
-        if (typeof rules.min === "number" && Number(value) < rules.min) {
-          logger.warn(
-            `Min validation failed for ${param}: value=${value}, min=${rules.min}`
-          );
-          validationErrors.push({
-            param,
-            value,
-            rule: "min",
-            message: `${param} must be ≥ ${rules.min}`,
-          });
-        }
-
-        if (typeof rules.max === "number" && Number(value) > rules.max) {
-          logger.warn(
-            `Max validation failed for ${param}: value=${value}, max=${rules.max}`
-          );
-          validationErrors.push({
-            param,
-            value,
-            rule: "max",
-            message: `${param} must be ≤ ${rules.max}`,
-          });
-        }
-
-        if (
-          rules.enum &&
-          Array.isArray(rules.enum) &&
-          !rules.enum.includes(value)
-        ) {
-          logger.warn(
-            `Enum validation failed for ${param}: value=${value}, enum=${JSON.stringify(
-              rules.enum
-            )}`
-          );
-          validationErrors.push({
-            param,
-            value,
-            rule: "enum",
-            message: `${param} must be one of: ${rules.enum.join(", ")}`,
-          });
-        }
-      });
-
-      if (validationErrors.length > 0) {
-        logger.warn(
-          `Validation errors for source ${from}: ${JSON.stringify(
-            validationErrors
-          )}`
-        );
-        allErrors.push({
-          source: from,
-          type: "VALIDATION_FAILED",
-          errors: validationErrors,
         });
       }
 

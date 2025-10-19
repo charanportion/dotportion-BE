@@ -148,22 +148,10 @@ export class PlatformProvider extends BaseProvider {
 
       const collection = this.db.collection(collectionName);
 
-      // Add platform metadata
-      const documentWithMetadata = {
-        ...data,
-        _platformMetadata: {
-          tenant: this.tenant,
-          createdAt: new Date(),
-          dbType: "platform",
-        },
-      };
-
-      const result = await collection.insertOne(documentWithMetadata);
+      const result = await collection.insertOne(data);
       return {
         _id: result.insertedId,
-        ...documentWithMetadata,
-        dbType: "platform",
-        tenant: this.tenant,
+        ...data,
       };
     } catch (error) {
       this.logger.error("Error in platform createDocument:", error);
@@ -215,16 +203,10 @@ export class PlatformProvider extends BaseProvider {
         )}`
       );
 
-      // Validate against schema if not test collection
-      if (collectionName !== "test") {
-        await this.validateDataAgainstSchema(collectionName, data);
-      }
-
       // Ensure we don't try to update the immutable _id and add update metadata
       delete data._id;
       const updateData = {
         ...data,
-        "_platformMetadata.updatedAt": new Date(),
       };
 
       const result = await collection.findOneAndUpdate(
