@@ -39,4 +39,41 @@ export class UserController {
       return this.createResponse(500, { message: "Internal server error." });
     }
   }
+
+  async updateUserProfile(event) {
+    try {
+      this.logger.info("--> updateUserProfile controller invoked");
+
+      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      if (!cognitoSub) {
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body || Object.keys(body).length === 0) {
+        return this.createResponse(400, {
+          message: "Profile data is required.",
+        });
+      }
+
+      const updatedUser = await this.userService.updateUserProfile(
+        cognitoSub,
+        body
+      );
+
+      return this.createResponse(200, {
+        message: "User profile updated successfully",
+        user: updatedUser,
+      });
+    } catch (error) {
+      this.logger.error("Error in updateUserProfile:", error);
+      console.log(error);
+      return this.createResponse(500, { message: "Internal server error." });
+    }
+  }
 }

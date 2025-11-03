@@ -42,6 +42,14 @@ const userSchema = new mongoose.Schema(
       goals: [{ type: String }],
       experience_level: { type: String },
     },
+    profile: {
+      name: { type: String },
+      contact_number: { type: String },
+      experience_level: { type: String },
+      tools: [{ type: String }],
+      subscription_tutorials: { type: Boolean, default: false },
+      subscription_newsletter: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,

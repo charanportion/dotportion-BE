@@ -6,10 +6,9 @@ import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
 import SecretModel from "/opt/nodejs/models/SecretModel.js";
-import { SchemaService } from "./service/schema-service.js";
-import { SchemaController } from "./controller/schema-controller.js";
-import { MongoSchemaHandler } from "./service/mongo-schema-handler.js";
-import { PlatformSchemaHandler } from "./service/platform-schema-handler.js";
+import { SecretService } from "./service/secret-service.js";
+import { DbProviderFactory } from "./service/db-provider-factory.js";
+import { ExternalDbController } from "./controller/external-db-controller.js";
 
 const { MONGO_URI, MDataBase } = process.env;
 
@@ -17,21 +16,21 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    logger.info("received Get Schema event:", JSON.stringify(event));
-    const schemaService = new SchemaService(
-      dbHandler,
-      logger,
-      SecretModel,
-      MongoSchemaHandler,
-      PlatformSchemaHandler
+    logger.info(
+      "received get Platform Collections event:",
+      JSON.stringify(event)
     );
-    const schemaController = new SchemaController(
-      schemaService,
+
+    const secretService = new SecretService(dbHandler, logger, SecretModel);
+    const dbProviderFactory = new DbProviderFactory(logger);
+    const externalDbController = new ExternalDbController(
+      secretService,
+      dbProviderFactory,
       logger,
       createResponse
     );
 
-    return await schemaController.getSchema(event);
+    return await externalDbController.getPlatformCollections(event);
   } catch (err) {
     logger.error("--- UNHANDLED FATAL ERROR in handler ---", err);
     // This is a fallback error response.

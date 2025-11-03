@@ -1,14 +1,34 @@
 export class SchemaService {
-  constructor(dbHandler, logger, SecretModel, MongoSchemaHandler) {
+  constructor(
+    dbHandler,
+    logger,
+    SecretModel,
+    MongoSchemaHandler,
+    PlatformSchemaHandler
+  ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.SecretModel = SecretModel;
     this.MongoSchemaHandler = MongoSchemaHandler;
-    this.logger.info(`-->Schema Service initialized`);
+    this.PlatformSchemaHandler = PlatformSchemaHandler;
+    this.logger.info(
+      `-->Schema Service initialized with dual database support`
+    );
   }
 
-  async getHandler(provider, secrets) {
+  async getHandler(provider, secrets, tenant) {
     switch (provider) {
+      case "platform":
+        const platformUri = process.env.MONGO_URI;
+        if (!platformUri) {
+          throw Object.assign(
+            new Error("Platform MongoDB URI not configured"),
+            {
+              statusCode: 500,
+            }
+          );
+        }
+        return new this.PlatformSchemaHandler(platformUri, this.logger);
       case "mongodb":
         return new this.MongoSchemaHandler(secrets, this.logger);
       default:
@@ -36,7 +56,7 @@ export class SchemaService {
   async createSchema(tenant, projectId, provider, collection, schema) {
     try {
       this.logger.info(
-        `-->createSchema service invoked with projectId: ${projectId}`
+        `-->createSchema service invoked with projectId: ${projectId}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -60,6 +80,13 @@ export class SchemaService {
         return { error: true, message: "No Schema" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.createSchema(tenant, collection, schema);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -69,7 +96,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.createSchema(collection, schema);
     } catch (error) {
       this.logger.error("Error in createSchema service:", error);
@@ -80,7 +107,7 @@ export class SchemaService {
   async getSchema(tenant, projectId, provider, collection) {
     try {
       this.logger.info(
-        `-->getSchema service invoked with collection: ${collection}`
+        `-->getSchema service invoked with collection: ${collection}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -100,6 +127,13 @@ export class SchemaService {
         return { error: true, message: "No Collection" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.getSchema(tenant, collection);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -109,7 +143,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.getSchema(collection);
     } catch (error) {
       this.logger.error("Error in getSchema service:", error);
@@ -120,7 +154,7 @@ export class SchemaService {
   async updateSchema(tenant, projectId, provider, collection, schema) {
     try {
       this.logger.info(
-        `-->updateSchema service invoked with collection: ${collection}`
+        `-->updateSchema service invoked with collection: ${collection}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -144,6 +178,13 @@ export class SchemaService {
         return { error: true, message: "No Schema" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.updateSchema(tenant, collection, schema);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -153,7 +194,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.updateSchema(collection, schema);
     } catch (error) {
       this.logger.error("Error in updateSchema service:", error);
@@ -164,7 +205,7 @@ export class SchemaService {
   async deleteSchema(tenant, projectId, provider, collection) {
     try {
       this.logger.info(
-        `-->deleteSchema service invoked with collection: ${collection}`
+        `-->deleteSchema service invoked with collection: ${collection}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -184,6 +225,13 @@ export class SchemaService {
         return { error: true, message: "No Collection" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.deleteSchema(tenant, collection);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -193,7 +241,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.deleteSchema(collection);
     } catch (error) {
       this.logger.error("Error in deleteSchema service:", error);
@@ -204,7 +252,7 @@ export class SchemaService {
   async getAvailableCollections(tenant, projectId, provider) {
     try {
       this.logger.info(
-        `-->getAvailableCollections service invoked with projectId: ${projectId}`
+        `-->getAvailableCollections service invoked with projectId: ${projectId}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -220,6 +268,13 @@ export class SchemaService {
         return { error: true, message: "No Provider" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.getAvailableCollections(tenant);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -229,7 +284,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.getAvailableCollections();
     } catch (error) {
       this.logger.error("Error in getAvailableCollections service:", error);
@@ -240,7 +295,7 @@ export class SchemaService {
   async getCollectionParameters(tenant, projectId, provider, collection) {
     try {
       this.logger.info(
-        `-->getCollectionParameters service invoked with collection: ${collection}`
+        `-->getCollectionParameters service invoked with collection: ${collection}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -262,6 +317,13 @@ export class SchemaService {
         return { error: true, message: "No Collection" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.getCollectionParameters(tenant, collection);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -271,7 +333,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.getCollectionParameters(collection);
     } catch (error) {
       this.logger.error("Error in getCollectionParameters service:", error);
@@ -282,7 +344,7 @@ export class SchemaService {
   async getAllCollectionsWithParameters(tenant, projectId, provider) {
     try {
       this.logger.info(
-        `-->getAllCollectionsWithParameters service invoked with projectId: ${projectId}`
+        `-->getAllCollectionsWithParameters service invoked with projectId: ${projectId}, provider: ${provider}`
       );
 
       if (!projectId) {
@@ -304,6 +366,13 @@ export class SchemaService {
         return { error: true, message: "No Provider" };
       }
 
+      // Handle platform database (no secrets required)
+      if (provider === "platform") {
+        const handler = await this.getHandler(provider, null, tenant);
+        return await handler.getAllCollectionsWithParameters(tenant);
+      }
+
+      // Handle external databases (secrets required)
       const secrets = await this.getSecretByProvider(
         tenant,
         projectId,
@@ -313,7 +382,7 @@ export class SchemaService {
         return { error: true, message: "Invalid DB secrets" };
       }
 
-      const handler = await this.getHandler(provider, secrets);
+      const handler = await this.getHandler(provider, secrets, tenant);
       return await handler.getAllCollectionsWithParameters();
     } catch (error) {
       this.logger.error(

@@ -25,4 +25,24 @@ export class UserService {
       return { error: true, message: "Error getting user" };
     }
   }
+
+  async updateUserProfile(cognitoSub, profileData) {
+    try {
+      await this.dbHandler.connectDb();
+
+      const update = {};
+      for (const [key, value] of Object.entries(profileData)) {
+        update[`profile.${key}`] = value;
+      }
+
+      const updatedUser = await this.userModel
+        .findOneAndUpdate({ cognitoSub }, { $set: update }, { new: true })
+        .select("-cognitoSub");
+
+      return updatedUser;
+    } catch (error) {
+      this.logger.error("Error updating user profile:", error);
+      throw new Error("Failed to update user profile");
+    }
+  }
 }
