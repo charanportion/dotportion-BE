@@ -1,13 +1,14 @@
-import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
-import UserModel from "../layers/common/nodejs/models/UserModel.js";
-import otpModel from "../layers/common/nodejs/models/otpModel.js";
-import logger from "../layers/common/nodejs/utils/logger.js";
-import { createResponse } from "../layers/common/nodejs/utils/api.js";
+// import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
+// import UserModel from "../layers/common/nodejs/models/UserModel.js";
+// import otpModel from "../layers/common/nodejs/models/otpModel.js";
+// import logger from "../layers/common/nodejs/utils/logger.js";
+// import { createResponse } from "../layers/common/nodejs/utils/api.js";
 
-// import { createDBHandler } from "/opt/nodejs/utils/db.js";
-// import logger from "/opt/nodejs/utils/logger.js";
-// import { createResponse } from "/opt/nodejs/utils/api.js";
-// import UserModel from "/opt/nodejs/models/UserModel.js";
+import { createDBHandler } from "/opt/nodejs/utils/db.js";
+import logger from "/opt/nodejs/utils/logger.js";
+import otpModel from "/opt/nodejs/models/otpModel.js";
+import { createResponse } from "/opt/nodejs/utils/api.js";
+import UserModel from "/opt/nodejs/models/UserModel.js";
 import { AuthService } from "./service/auth-service.js";
 import { AuthController } from "./controller/auth-controller.js";
 

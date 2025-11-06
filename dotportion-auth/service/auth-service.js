@@ -1,11 +1,5 @@
-import {
-  hashPassword,
-  verifyPassword,
-} from "../../layers/common/nodejs/utils/hash.js";
-
 import jwt from "jsonwebtoken";
-
-import { generateOtp } from "../../layers/common/nodejs/utils/otp.js";
+import bcrypt from "bcryptjs";
 
 export class AuthService {
   constructor(dbHandler, logger, otpModel, userModel, emailService) {
@@ -15,6 +9,19 @@ export class AuthService {
     this.userModel = userModel;
     this.emailService = emailService;
     this.logger.info("--> AuthService initialized");
+  }
+
+  generateOtp = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  async hashPassword(password) {
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(password, salt);
+  }
+
+  async verifyPassword(password, hash) {
+    return bcrypt.compare(password, hash);
   }
 
   async signUp(email, password, full_name, name) {
@@ -31,8 +38,8 @@ export class AuthService {
         return { status: 400, message: "Username already exists" };
       }
 
-      const passwordHash = await hashPassword(password);
-      const otp = generateOtp();
+      const passwordHash = await this.hashPassword(password);
+      const otp = this.generateOtp();
       const user = await this.userModel.create({
         // cognitoSub: uuidv4(),
         email,
@@ -121,7 +128,7 @@ export class AuthService {
       const user = await this.userModel.findOne({ email });
       if (!user) return { status: 400, message: "User not found" };
 
-      const otp = generateOtp();
+      const otp = this.generateOtp();
 
       await this.otpModel.updateMany(
         { email, context, used: false },
@@ -157,7 +164,7 @@ export class AuthService {
       if (!user.isVerified)
         return { status: 403, message: "User not verified" };
 
-      const valid = await verifyPassword(password, user.password);
+      const valid = await this.verifyPassword(password, user.password);
       if (!valid) return { status: 401, messsage: "Invalid credentials" };
 
       const payload = {
@@ -166,7 +173,7 @@ export class AuthService {
       };
 
       const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
-        expiresIn: "1h",
+        expiresIn: "6h",
       });
 
       return {
@@ -191,7 +198,7 @@ export class AuthService {
       const user = await this.userModel.findOne({ email });
       if (!user) return { status: 404, message: "User not found" };
 
-      const otp = generateOtp();
+      const otp = this.generateOtp();
 
       await this.otpModel.updateMany(
         { email, context: "FORGOT_PASSWORD", used: false },
@@ -235,7 +242,7 @@ export class AuthService {
       if (userOtp.otp !== otp)
         return { status: 400, message: "Invalid OTP entered" };
 
-      user.password = await hashPassword(newPassword);
+      user.password = await this.hashPassword(newPassword);
       await user.save();
 
       userOtp.used = true;

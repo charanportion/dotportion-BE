@@ -46,9 +46,20 @@ functions:
     timeout: 30
     events:
       - http:
-          path: /me
-          method: GET
-          cors: true
+          path: /signup
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
   verifyOtp:
     handler: verify-otp.handler
@@ -57,7 +68,18 @@ functions:
       - http:
           path: /verify-otp
           method: POST
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
   resendOtp:
     handler: resend-otp.handler
@@ -66,7 +88,18 @@ functions:
       - http:
           path: /resend-otp
           method: POST
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
   login:
     handler: login.handler
@@ -75,7 +108,18 @@ functions:
       - http:
           path: /login
           method: POST
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
   forgotPassword:
     handler: forgot-password.handler
@@ -84,7 +128,18 @@ functions:
       - http:
           path: /forgot-password
           method: POST
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
   resetPassword:
     handler: reset-password.handler
@@ -93,16 +148,18 @@ functions:
       - http:
           path: /reset-password
           method: POST
-          cors: true
-
-  logout:
-    handler: logout.handler
-    timeout: 30
-    events:
-      - http:
-          path: /logout
-          method: POST
-          cors: true
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
 
 layers:
   common:

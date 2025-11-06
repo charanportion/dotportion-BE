@@ -4,7 +4,6 @@ const userSchema = new mongoose.Schema(
   {
     cognitoSub: {
       type: String,
-      required: true,
       unique: true,
       index: true,
     },
@@ -26,6 +25,11 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -35,12 +39,27 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    onboarding: {
-      role: { type: String },
-      company_size: { type: String },
-      referral_source: { type: String },
-      goals: [{ type: String }],
+    isNewUser: {
+      type: Boolean,
+      default: true,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
+    refreshToken: {
+      type: String,
+    },
+    profile: {
+      name: { type: String },
+      contact_number: { type: String },
+      occupation: { type: String },
+      tools: [{ type: String }],
       experience_level: { type: String },
+      subscription_tutorials: { type: Boolean, default: false },
+      subscription_newsletter: { type: Boolean, default: false },
     },
   },
   {
