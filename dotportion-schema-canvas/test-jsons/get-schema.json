@@ -1,0 +1,16 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
+        "email": "cognito@yopmail.com",
+        "name": "cognito"
+      }
+    }
+  },
+  "body": {},
+  "pathParameters": {
+    "projectId": "68836caf709af61cf2013959",
+    "dataBase": "platform"
+  }
+}
