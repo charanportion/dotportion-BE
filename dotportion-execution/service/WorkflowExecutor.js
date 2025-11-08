@@ -3,6 +3,7 @@ import { ErrorTypes } from "../utils/errors.js";
 import replaceDynamicValues from "../utils/replaceDynamicValues.js";
 import { MongoClient } from "mongodb";
 import jwt from "jsonwebtoken";
+import { PlatformDatabaseHandler } from "../utils/PlatformDatabaseHandler.js";
 
 export class WorkflowExecutor {
   constructor(secretService) {
@@ -290,6 +291,10 @@ export class WorkflowExecutor {
     return await this.processLogicNode(node, input, req, context);
   }
 
+  async handleMongoDBNode(node, input, req, context, workflow) {
+    return await this.processMongoDBNode(node, input, req, context, workflow);
+  }
+
   async handleDatabaseNode(node, input, req, context, workflow) {
     return await this.processDatabaseNode(node, input, req, context, workflow);
   }
@@ -327,6 +332,7 @@ export class WorkflowExecutor {
       this.handleParametersNode.bind(this)
     );
     this.registerNodeHandler("logic", this.handleLogicNode.bind(this));
+    this.registerNodeHandler("mongodb", this.handleMongoDBNode.bind(this));
     this.registerNodeHandler("database", this.handleDatabaseNode.bind(this));
     this.registerNodeHandler("response", this.handleResponseNode.bind(this));
     this.registerNodeHandler(
@@ -358,12 +364,7 @@ export class WorkflowExecutor {
     for (const sourceConfig of mergePriority
       .map((src) => sources.find((s) => s.from === src))
       .filter(Boolean)) {
-      const {
-        from,
-        required = [],
-        validation = {},
-        mapping = {},
-      } = sourceConfig;
+      const { from, parameters = {} } = sourceConfig;
       let sourceInput;
 
       // Get input from different sources
@@ -393,25 +394,20 @@ export class WorkflowExecutor {
 
       // Process parameter mapping
       const processedInput = {};
+      const missingParams = [];
 
-      const allowedKeys = new Set([
-        ...required,
-        ...Object.keys(validation),
-        ...Object.keys(mapping),
-      ]);
+      Object.entries(parameters).forEach(([paramName, paramConfig]) => {
+        const { required = false } = paramConfig;
+        const value = sourceInput?.[paramName];
 
-      for (const key of allowedKeys) {
-        const sourceKey = mapping[key] || key;
-        if (sourceInput && sourceKey in sourceInput) {
-          processedInput[key] = sourceInput[sourceKey];
-          allCollectedParams.add(key);
+        // Check if parameter exists
+        if (value !== undefined) {
+          processedInput[paramName] = value;
+          allCollectedParams.add(paramName);
+        } else if (required) {
+          // Parameter is required but missing
+          missingParams.push(paramName);
         }
-      }
-
-      // Check required parameters
-      const missingParams = required.filter((param) => {
-        const sourceParam = mapping[param] || param;
-        return !(sourceParam in (sourceInput || {}));
       });
 
       if (missingParams.length > 0) {
@@ -419,64 +415,9 @@ export class WorkflowExecutor {
           source: from,
           type: "MISSING_PARAMS",
           params: missingParams,
-          message: `Missing in ${from}: ${missingParams.join(", ")}`,
-        });
-      }
-
-      // Validate parameters
-      const validationErrors = [];
-      Object.entries(validation).forEach(([param, rules]) => {
-        const sourceParam = mapping[param] || param;
-        const value = processedInput[param];
-
-        if (value === undefined) return;
-
-        if (rules.regex && !new RegExp(rules.regex).test(value)) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "regex",
-            message: rules.message || `${param} failed format validation`,
-          });
-        }
-
-        if (typeof rules.min === "number" && Number(value) < rules.min) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "min",
-            message: `${param} must be ≥ ${rules.min}`,
-          });
-        }
-
-        if (typeof rules.max === "number" && Number(value) > rules.max) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "max",
-            message: `${param} must be ≤ ${rules.max}`,
-          });
-        }
-
-        if (
-          rules.enum &&
-          Array.isArray(rules.enum) &&
-          !rules.enum.includes(value)
-        ) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "enum",
-            message: `${param} must be one of: ${rules.enum.join(", ")}`,
-          });
-        }
-      });
-
-      if (validationErrors.length > 0) {
-        allErrors.push({
-          source: from,
-          type: "VALIDATION_FAILED",
-          errors: validationErrors,
+          message: `Missing required parameters in ${from}: ${missingParams.join(
+            ", "
+          )}`,
         });
       }
 
@@ -488,13 +429,7 @@ export class WorkflowExecutor {
     if (strictMode) {
       const allowedParams = new Set();
       sources.forEach((src) => {
-        [
-          ...(src.required || []),
-          ...Object.keys(src.validation || {}),
-          ...Object.values(src.mapping || {}),
-        ]
-          .filter(Boolean)
-          .forEach((p) => allowedParams.add(p));
+        Object.keys(src.parameters || {}).forEach((p) => allowedParams.add(p));
       });
 
       const unexpectedParams = [...allCollectedParams].filter(
@@ -569,7 +504,7 @@ export class WorkflowExecutor {
     }
   }
 
-  async processDatabaseNode(
+  async processMongoDBNode(
     node,
     input,
     req,
@@ -708,6 +643,78 @@ export class WorkflowExecutor {
       };
     } finally {
       await client.close();
+    }
+  }
+
+  async processDatabaseNode(
+    node,
+    input,
+    req,
+    context,
+    workflow,
+    isRealTime = false
+  ) {
+    const { tenant } = req.params;
+    const {
+      collection,
+      operation,
+      data = {},
+      query = {},
+      options = {},
+    } = node.data;
+
+    if (!collection || !operation) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing collection or operation",
+      };
+    }
+
+    if (!tenant) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing tenant in node or input",
+      };
+    }
+
+    // Use platform MongoDB connection with schema management
+    const platformUri = process.env.MONGO_URI;
+    if (!platformUri) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Platform MongoDB URI not configured",
+      };
+    }
+
+    const dbHandler = new PlatformDatabaseHandler(platformUri);
+
+    try {
+      await dbHandler.connect(tenant);
+
+      // Ensure collection exists (will auto-create test or check schema for others)
+      await dbHandler.ensureCollectionExists(collection, tenant);
+
+      const resolvedFilter = replaceDynamicValues(query, input, context);
+      const resolvedData = replaceDynamicValues(data, input, context);
+
+      // Execute operation with schema validation
+      const result = await dbHandler.executeOperation(
+        operation,
+        collection,
+        resolvedFilter,
+        resolvedData,
+        options
+      );
+
+      return result;
+    } catch (err) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: err.message || "Platform database operation failed",
+        originalError: err.toString(),
+      };
+    } finally {
+      await dbHandler.close();
     }
   }
 
