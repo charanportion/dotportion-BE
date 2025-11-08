@@ -50,6 +50,15 @@ export class AuthService {
         isVerified: false,
       });
 
+      const payload = {
+        userId: user._id,
+        email: user.email,
+      };
+
+      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+        expiresIn: "6h",
+      });
+
       await this.otpModel.updateMany(
         { email, context: "REGISTER", used: false },
         { used: true }
@@ -69,6 +78,12 @@ export class AuthService {
       return {
         status: 201,
         message: "User created successfully. Verify OTP to activate account.",
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+        },
       };
     } catch (error) {
       this.logger.error(

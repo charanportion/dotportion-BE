@@ -38,7 +38,7 @@ export class AuthController {
         name
       );
       console.log(result);
-      return this.createResponse(result.status, { message: result.message });
+      return this.createResponse(result.status, { message: result });
     } catch (error) {
       this.logger.error("--> Signup controller failed", error);
       return { status: 500, message: " Internal server error" };
