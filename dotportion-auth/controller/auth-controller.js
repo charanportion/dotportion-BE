@@ -38,7 +38,10 @@ export class AuthController {
         name
       );
       console.log(result);
-      return this.createResponse(result.status, { message: result.message });
+      return this.createResponse(result.status, {
+        message: result,
+        token: result.token,
+      });
     } catch (error) {
       this.logger.error("--> Signup controller failed", error);
       return { status: 500, message: " Internal server error" };
@@ -81,7 +84,10 @@ export class AuthController {
 
       const { email, password } = body;
       const result = await this.authService.login(email, password);
-      return this.createResponse(result.status, { message: result });
+      return this.createResponse(result.status, {
+        message: result,
+        token: result.token,
+      });
     } catch (error) {
       this.logger.error("--> login controller failed", error);
       return { status: 500, message: " Internal server error" };

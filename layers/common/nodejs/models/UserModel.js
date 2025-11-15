@@ -43,15 +43,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpires: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
-    },
     profile: {
       name: { type: String },
       contact_number: { type: String },
