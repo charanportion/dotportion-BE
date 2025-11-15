@@ -26,7 +26,6 @@ const workflowSchema = new mongoose.Schema(
     owner: {
       type: String,
       required: true,
-      index: true,
     },
     tenant: {
       type: String,
@@ -98,10 +97,29 @@ const workflowSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
+    visibility: {
+      type: String,
+      enum: ["private", "unlisted", "public"],
+      default: "private",
+    },
+    forkedFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Workflow",
+      default: null,
+    },
+    forkCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,
   }
 );
+
+workflowSchema.index({ isPublic: 1, forkCount: -1 });
+workflowSchema.index({ owner: 1 });
+workflowSchema.index({ forkedFrom: 1 });
 
 export default mongoose.model("Workflow", workflowSchema);

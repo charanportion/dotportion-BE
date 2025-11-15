@@ -113,6 +113,7 @@ export class WorkflowController {
         "Error in createWorkflow handler:",
         JSON.stringify(error)
       );
+      console.log("Error", error.message, error.code, error.status);
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -418,6 +419,94 @@ export class WorkflowController {
     } catch (error) {
       this.logger.error(
         "Error in toggleWorkflowDeployment handler:",
+        JSON.stringify(error)
+      );
+      return this.createResponse(500, {
+        message: "Internal server error.",
+      });
+    }
+  }
+
+  async forkWorkflow(event) {
+    try {
+      this.logger.info(
+        "--> forkWorkflow controller invoked with event:",
+        event
+      );
+
+      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const { workflowId } = event.pathParameters;
+      const { body } = event;
+
+      if (!cognitoSub) {
+        this.logger.error("Missing Cognito user identifier.");
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      if (!workflowId) {
+        this.logger.error("Missing workflowId in path parameters.");
+        return this.createResponse(400, { error: "WorkflowId is missing." });
+      }
+
+      if (!body) {
+        this.logger.error("Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+
+      const { projectId } = JSON.parse(body);
+
+      if (!projectId) {
+        this.logger.error("Missing projectId in body.");
+        return this.createResponse(400, { error: "Missing projectId." });
+      }
+
+      // Verify target project exists and belongs to user
+      const project = await this.projectService.getProjectById(
+        projectId,
+        cognitoSub
+      );
+      if (!project || project.error) {
+        this.logger.error("Project not found or access denied.");
+        return this.createResponse(404, {
+          message: "Project not found or access denied.",
+        });
+      }
+
+      // Call service layer to fork the workflow
+      const forked = await this.workflowService.forkWorkflow(
+        workflowId,
+        projectId,
+        cognitoSub
+      );
+
+      if (forked.error) {
+        this.logger.error("Error in forkWorkflow service:", forked.message);
+        return this.createResponse(forked.statusCode || 500, {
+          message: forked.message,
+        });
+      }
+
+      // Add forked workflow to the project
+      const updatedProject = await this.projectService.addWorkflowToProject(
+        projectId,
+        forked._id
+      );
+
+      if (updatedProject.error) {
+        this.logger.warn("Workflow forked but failed to add to project.");
+      }
+
+      this.logger.info("Workflow forked successfully:", forked);
+      return this.createResponse(200, {
+        success: true,
+        message: "Workflow forked successfully.",
+        data: forked,
+      });
+    } catch (error) {
+      this.logger.error(
+        "Error in forkWorkflow handler:",
         JSON.stringify(error)
       );
       return this.createResponse(500, {

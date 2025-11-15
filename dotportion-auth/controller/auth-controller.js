@@ -44,7 +44,7 @@ export class AuthController {
       });
     } catch (error) {
       this.logger.error("--> Signup controller failed", error);
-      return { status: 500, message: " Internal server error" };
+      return { status: 500, message: "Internal server error" };
     }
   }
 
