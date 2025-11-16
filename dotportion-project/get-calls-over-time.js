@@ -8,8 +8,6 @@ import ExecutionLogModel from "/opt/nodejs/models/ExecutionLog.js";
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
 // import ProjectModel from "../layers/common/nodejs/models/ProjectModel.js";
 // import ExecutionLogModel from "../layers/common/nodejs/models/ExecutionLog.js";
-// import WorkflowModel from "../layers/common/nodejs/models/WorkflowModel.js";
-// import SecretModel from "../layers/common/nodejs/models/SecretModel.js";
 import { ProjectService } from "./service/project-service.js";
 import { ProjectController } from "./controller/project-controller.js";
 import mongoose from "mongoose";

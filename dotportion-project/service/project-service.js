@@ -8,14 +8,14 @@ export class ProjectService {
     this.logger.info(`-->Project Service initialized`);
   }
 
-  async createProject(projectData, cognitoSub) {
+  async createProject(projectData, userId) {
     try {
       this.logger.info(
         `-->createProject service invoked with projectData:`,
         projectData
       );
-      if (!cognitoSub) {
-        this.logger.warn("createProject called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("createProject called without a userId.");
         return { error: true, message: "No Project Data" };
       }
       if (!projectData) {
@@ -25,7 +25,7 @@ export class ProjectService {
       await this.dbHandler.connectDb();
       const project = await this.ProjectModel.create({
         ...projectData,
-        owner: cognitoSub,
+        owner: userId,
       });
       return project;
     } catch (error) {
@@ -37,18 +37,18 @@ export class ProjectService {
     }
   }
 
-  async getProjectByOwner(cognitoSub) {
+  async getProjectByOwner(userId) {
     try {
       this.logger.info(
         `-->getProjectByOwner service invoked with cognitoSub:`,
-        cognitoSub
+        userId
       );
-      if (!cognitoSub) {
-        this.logger.warn("getProjectByOwner called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getProjectByOwner called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
-      const projects = await this.ProjectModel.find({ owner: cognitoSub })
+      const projects = await this.ProjectModel.find({ owner: userId })
         .populate({
           path: "workflows",
           select: "name method path",
@@ -72,7 +72,7 @@ export class ProjectService {
     }
   }
 
-  async getProjectById(projectId, cognitoSub) {
+  async getProjectById(projectId, userId) {
     try {
       this.logger.info(
         `-->getProjectById service invoked with projectId:`,
@@ -82,35 +82,31 @@ export class ProjectService {
         this.logger.warn("getProjectById called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getProjectById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getProjectById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
+
       const project = await this.ProjectModel.findOne({
         _id: projectId,
-        owner: cognitoSub,
-      })
-        .populate({
-          path: "workflows",
-          select: "name method path",
-        })
-        .populate({
-          path: "secrets",
-          select: "provider",
-        })
-        .populate({
-          path: "stats.topWorkflows.workflowId",
-          select: "name method path",
-        });
+        owner: userId,
+      });
+
+      if (!project) {
+        return { error: true, message: "No Project Found" };
+      }
+
       return project;
     } catch (error) {
-      this.logger.error("Error in getProjectById service:", error);
+      this.logger.error(
+        `Error in getProjectById service: ${JSON.stringify(error)}`
+      );
       return { error: true, message: "Error getProjectById" };
     }
   }
 
-  async updateProject(projectId, cognitoSub, projectData) {
+  async updateProject(projectId, userId, projectData) {
     try {
       this.logger.info(
         `-->updateProject service invoked with projectId:`,
@@ -120,8 +116,8 @@ export class ProjectService {
         this.logger.warn("updateProject called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("updateProject called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("updateProject called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       if (!projectData) {
@@ -130,7 +126,7 @@ export class ProjectService {
       }
       await this.dbHandler.connectDb();
       const project = await this.ProjectModel.findOneAndUpdate(
-        { _id: projectId, owner: cognitoSub },
+        { _id: projectId, owner: userId },
         projectData,
         { new: true }
       );
@@ -141,7 +137,7 @@ export class ProjectService {
     }
   }
 
-  async deleteProject(projectId, cognitoSub) {
+  async deleteProject(projectId, userId) {
     try {
       this.logger.info(
         `-->deleteProject service invoked with projectId:`,
@@ -151,14 +147,14 @@ export class ProjectService {
         this.logger.warn("deleteProject called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("deleteProject called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("deleteProject called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
       const project = await this.ProjectModel.findOneAndDelete({
         _id: projectId,
-        owner: cognitoSub,
+        owner: userId,
       });
       return project ? true : false;
     } catch (error) {
@@ -169,7 +165,7 @@ export class ProjectService {
 
   async getCallsOverTime(
     projectId,
-    cognitoSub,
+    userId,
     rangeDays = 7,
     groupBy = "day",
     selectedDate = null
@@ -183,8 +179,8 @@ export class ProjectService {
         this.logger.warn("getCallsOverTime called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getCallsOverTime called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getCallsOverTime called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
 
@@ -193,7 +189,7 @@ export class ProjectService {
       // First verify the project belongs to the user
       const project = await this.ProjectModel.findOne({
         _id: projectId,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!project) {

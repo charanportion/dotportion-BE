@@ -20,28 +20,39 @@ export class SecretController {
         "--> createSecret controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { body } = event;
-      const { projectId } = event.pathParameters;
 
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
         return this.createResponse(400, { error: "Request body is missing." });
       }
-
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
-      const secretData = JSON.parse(body);
-      // const secretData = body;
 
+      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error(
           "Validation failed: Missing projectId in request Path Parameters."
@@ -54,8 +65,9 @@ export class SecretController {
       // Verify that the project exists and belongs to the user
       const project = await this.projectService.getProjectById(
         projectId,
-        cognitoSub
+        userId
       );
+
       if (!project || project.error) {
         this.logger.error("Project not found or access denied");
         return this.createResponse(404, {
@@ -63,23 +75,12 @@ export class SecretController {
         });
       }
 
-      const user = await this.userService.findUserByCognitoSub(cognitoSub);
-      if (!user || user.error) {
-        this.logger.error("User not found or access denied");
-        return this.createResponse(404, {
-          message: "User not found or access denied.",
-        });
-      }
-
-      // Extract tenant from user
-      const tenant = user.name;
-
       // Create the secret
       const secret = await this.secretService.createSecret(
         tenant,
-        cognitoSub,
+        userId,
         projectId,
-        secretData
+        body
       );
 
       if (secret.error) {

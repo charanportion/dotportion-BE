@@ -13,24 +13,22 @@ export class UserController {
         event
       );
 
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
-      const user = await this.userService.findUserByCognitoSub(cognitoSub);
+      const user = await this.userService.findUserById(userId);
 
-      if (!user) {
-        this.logger.warn(
-          `User profile not found in DB for cognitoSub: ${cognitoSub}`
-        );
-        return this.createResponse(404, { message: "User profile not found." });
+      if (user.error) {
+        this.logger.warn(`User profile not found in DB for userId: ${userId}`);
+        return this.createResponse(404, { message: user.message });
       }
 
       return this.createResponse(200, user);
@@ -44,8 +42,12 @@ export class UserController {
     try {
       this.logger.info("--> updateUserProfile controller invoked");
 
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
@@ -66,10 +68,16 @@ export class UserController {
       console.log(full_name, profile);
 
       const updatedUser = await this.userService.updateUserProfile(
-        cognitoSub,
+        userId,
         full_name,
         profile
       );
+
+      if (updatedUser.error) {
+        return this.createResponse(404, {
+          message: updatedUser.message,
+        });
+      }
 
       return this.createResponse(200, {
         message: "User profile updated successfully",
@@ -86,8 +94,12 @@ export class UserController {
     try {
       this.logger.info("--> changePassword controller initialised");
 
-      const cognitoSub = event.requestContext?.authorizer?.claims?.sub;
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
@@ -96,14 +108,17 @@ export class UserController {
       const body =
         typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
-      const { currentPassword, newPassword } = body;
+      const { newPassword } = body;
 
-      const result = await this.userService.changePassword(
-        cognitoSub,
-        newPassword
-      );
+      const result = await this.userService.changePassword(userId, newPassword);
 
-      return this.createResponse(result.status, { message: result.message });
+      if (result.error) {
+        return this.createResponse(404, {
+          message: result.message,
+        });
+      }
+
+      return this.createResponse(201, { message: result.message });
     } catch (error) {
       this.logger.error(
         "--> changePassword controller failed",
@@ -117,8 +132,12 @@ export class UserController {
     try {
       this.logger.info("--> updateTheme controller initialised");
 
-      const cognitoSub = event.requestContext?.authorizer?.claims?.sub;
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
@@ -129,9 +148,15 @@ export class UserController {
 
       const { theme } = body;
 
-      const result = await this.userService.updateTheme(cognitoSub, theme);
+      const result = await this.userService.updateTheme(userId, theme);
 
-      return this.createResponse(result.status, { message: result });
+      if (result.error) {
+        return this.createResponse(404, {
+          message: result.message,
+        });
+      }
+
+      return this.createResponse(201, { message: result });
     } catch (error) {
       this.logger.error("--> updateTheme controller failed", error);
       return this.createResponse(500, { message: "Internal server error" });

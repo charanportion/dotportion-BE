@@ -8,9 +8,9 @@ const SecretSchema = new mongoose.Schema(
       index: true,
     },
     owner: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-      index: true,
     },
     project: {
       type: mongoose.Schema.Types.ObjectId,

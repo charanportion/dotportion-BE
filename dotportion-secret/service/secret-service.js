@@ -6,7 +6,7 @@ export class SecretService {
     this.logger.info(`-->Secret Service initialized`);
   }
 
-  async createSecret(tenant, cognitoSub, projectId, secretData) {
+  async createSecret(tenant, userId, projectId, secretData) {
     try {
       this.logger.info(
         `-->createSecret service invoked with projectId:`,
@@ -16,8 +16,8 @@ export class SecretService {
         this.logger.warn("createSecret called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("createSecret called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("createSecret called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       if (!tenant) {
@@ -45,7 +45,7 @@ export class SecretService {
 
       const secret = await this.SecretModel.create({
         tenant,
-        owner: cognitoSub,
+        owner: userId,
         project: projectId,
         provider: secretData.provider,
         data: secretData.data,

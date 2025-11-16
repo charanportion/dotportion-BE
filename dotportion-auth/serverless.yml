@@ -13,8 +13,6 @@ custom:
     createRoute53Record: false
     basePath: "auth"
     endpointType: "regional"
-  cognito:
-    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
 
 provider:
   name: aws
@@ -40,6 +38,9 @@ provider:
     BASE_URL: https://${self:custom.domains.${self:provider.stage}}
 
 functions:
+  authorizer:
+    handler: authorizer.handler
+
   # Handles adding a user to the waitlist
   signup:
     handler: signup.handler
@@ -161,14 +162,6 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
-
 plugins:
   - serverless-offline
   - serverless-prune-plugin
@@ -179,3 +172,14 @@ package:
   individually: true
   exclude:
     - node_modules/aws-sdk/**
+
+resources:
+  Outputs:
+    AuthorizerArn:
+      Description: "Lambda Authorizer ARN"
+      Value:
+        Fn::GetAtt:
+          - AuthorizerLambdaFunction
+          - Arn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-authorizer-arn

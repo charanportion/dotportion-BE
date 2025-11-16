@@ -32,8 +32,37 @@ export class UserService {
     }
   }
 
-  async updateUserProfile(cognitoSub, full_name, profile = {}) {
+  async findUserById(userId) {
     try {
+      if (!userId) {
+        this.logger.warn("findUserById called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
+      // Connect to the database
+      await this.dbHandler.connectDb();
+
+      // Find the user and exclude the cognitoSub for security
+      const user = await this.userModel
+        .findById(userId)
+        .select("-cognitoSub -password");
+
+      if (!user) {
+        this.logger.info(`User not found with id: ${userId}`);
+        return { error: true, message: "User not found" };
+      }
+      return user;
+    } catch (error) {
+      this.logger.error("Error getting user:", error);
+      return { error: true, message: "Error getting user" };
+    }
+  }
+
+  async updateUserProfile(userId, full_name, profile = {}) {
+    try {
+      if (!userId) {
+        this.logger.warn("findUserById called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
       await this.dbHandler.connectDb();
 
       const update = {};
@@ -44,34 +73,38 @@ export class UserService {
       }
       if (full_name) update.full_name = full_name;
 
-      console.log(update);
-
       const updatedUser = await this.userModel
-        .findOneAndUpdate({ cognitoSub }, { $set: update }, { new: true })
-        .select("-cognitoSub");
+        .findByIdAndUpdate(userId, { $set: update }, { new: true })
+        .select("-cognitoSub -password");
+
+      if (!updatedUser) {
+        this.logger.info(`User not found with id: ${userId}`);
+        return { error: true, message: "User not found" };
+      }
 
       return updatedUser;
     } catch (error) {
       this.logger.error("Error updating user profile:", error);
-      throw new Error("Failed to update user profile");
+      return { error: true, message: "Failed to update user profile" };
     }
   }
 
-  async changePassword(cognitoSub, newPassword) {
+  async changePassword(userId, newPassword) {
     try {
       this.logger.info("changePassword service invoked");
+      if (!userId) {
+        this.logger.warn("findUserById called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
       await this.dbHandler.connectDb();
 
-      const user = await this.userModel.findOne({ cognitoSub });
+      const user = await this.userModel.findById(userId);
 
-      if (!user) return { status: 404, message: "User not found" };
-      console.log(user);
-
-      console.log(user.password);
+      if (!user) return { error: true, message: "User not found" };
 
       if (!newPassword || newPassword.length < 0) {
         return {
-          status: 400,
+          error: true,
           message: "New password must be atleast 8 characters long",
         };
       }
@@ -81,16 +114,21 @@ export class UserService {
 
       await user.save();
 
-      return { status: 200, message: "Password updated successfully" };
+      return { error: false, message: "Password updated successfully" };
     } catch (error) {
       this.logger.error("Error changing password", error);
-      return { status: 500, message: "Internal server error" };
+      return { error: true, message: "Internal server error" };
     }
   }
 
-  async updateTheme(cognitoSub, theme) {
+  async updateTheme(userId, theme) {
     try {
       this.logger.info("UpdateTheme service invoked");
+
+      if (!userId) {
+        this.logger.warn("findUserById called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
 
       await this.dbHandler.connectDb();
       const allowed = ["light", "dark", "system"];
@@ -99,17 +137,21 @@ export class UserService {
       }
 
       const user = await this.userModel
-        .findOneAndUpdate({ cognitoSub }, { theme }, { new: true })
-        .select("-cognitoSub");
+        .findByIdAndUpdate(
+          userId,
+          { $set: { "profile.theme": theme } },
+          { new: true }
+        )
+        .select("-cognitoSub -password");
 
       if (!user) {
-        return { status: 404, message: "User not found" };
+        return { error: true, message: "User not found" };
       }
 
-      return { status: 200, message: "Theme updated successfully", user };
+      return { error: false, message: "Theme updated successfully", user };
     } catch (error) {
       this.logger.error("Error updating theme", error);
-      return { status: 500, message: "Internal server error" };
+      return { error: true, message: "Internal server error" };
     }
   }
 }
