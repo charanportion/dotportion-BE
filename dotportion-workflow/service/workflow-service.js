@@ -34,6 +34,8 @@ export class WorkflowService {
         project: projectId,
         owner: cognitoSub,
         tenant,
+        isPublic: workflowData.isPublic || false,
+        visibility: workflowData.visibility || "private",
       });
       return workflow;
     } catch (error) {
@@ -53,7 +55,10 @@ export class WorkflowService {
         return { error: true, message: "No Project ID" };
       }
       await this.dbHandler.connectDb();
-      const workflows = await this.WorkflowModel.find({ project: projectId });
+      const workflows = await this.WorkflowModel.find({
+        project: projectId,
+        visibility: "public",
+      });
       return workflows;
     } catch (error) {
       this.logger.error("Error in getWorkflowsByProjectId service:", error);
@@ -78,7 +83,7 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const workflow = await this.WorkflowModel.findOne({
         _id: workflowId,
-        owner: cognitoSub,
+        $or: [{ owner: cognitoSub }, { visibility: "public" }],
       });
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
@@ -109,11 +114,13 @@ export class WorkflowService {
         return { error: true, message: "No Workflow Data" };
       }
       await this.dbHandler.connectDb();
+      const { forkedFrom, forkCount, ...allowedData } = workflowData;
       const workflow = await this.WorkflowModel.findOneAndUpdate(
         { _id: workflowId, owner: cognitoSub },
-        workflowData,
+        allowedData,
         { new: true }
       );
+
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
       }
@@ -205,6 +212,68 @@ export class WorkflowService {
     } catch (error) {
       this.logger.error("Error in toggleWorkflowDeployment service:", error);
       return { error: true, message: "Error toggling workflow deployment" };
+    }
+  }
+
+  async forkWorkflow(workflowId, projectId, cognitoSub) {
+    try {
+      this.logger.info(
+        `--> forkWorkflow service invoked with workflowId: ${workflowId} and projectId: ${projectId}`
+      );
+
+      if (!workflowId || !projectId || !cognitoSub) {
+        return {
+          error: true,
+          message: "Missing required parameters",
+          statusCode: 400,
+        };
+      }
+
+      await this.dbHandler.connectDb();
+
+      // Find source workflow
+      const source = await this.WorkflowModel.findById(workflowId);
+      if (!source) {
+        return { error: true, message: "Workflow not found", statusCode: 404 };
+      }
+
+      // Validate fork permission (only public or template workflows)
+      if (!source.isPublic && source.visibility !== "public") {
+        return {
+          error: true,
+          message: "You cannot fork this workflow",
+          statusCode: 403,
+        };
+      }
+
+      // Create forked workflow
+      const cloned = await this.WorkflowModel.create({
+        name: `${source.name} (Forked)`,
+        description: source.description,
+        method: source.method,
+        path: source.path,
+        project: projectId,
+        owner: cognitoSub,
+        tenant: source.tenant,
+        nodes: source.nodes,
+        edges: source.edges,
+        isPublic: false,
+        visibility: "private",
+        forkedFrom: source._id,
+      });
+
+      // Increment fork count on source workflow
+      source.forkCount = (source.forkCount || 0) + 1;
+      await source.save();
+
+      return cloned;
+    } catch (error) {
+      this.logger.error("Error in forkWorkflow service:", error);
+      return {
+        error: true,
+        message: "Error forking workflow",
+        statusCode: 500,
+      };
     }
   }
 }

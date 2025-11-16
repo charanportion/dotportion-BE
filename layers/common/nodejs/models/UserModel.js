@@ -43,15 +43,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpires: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
-    },
     profile: {
       name: { type: String },
       contact_number: { type: String },
@@ -60,6 +51,11 @@ const userSchema = new mongoose.Schema(
       experience_level: { type: String },
       subscription_tutorials: { type: Boolean, default: false },
       subscription_newsletter: { type: Boolean, default: false },
+      theme: {
+        type: String,
+        enum: ["light", "dark", "system"],
+        default: "system",
+      },
     },
   },
   {

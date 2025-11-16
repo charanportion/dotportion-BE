@@ -1,19 +1,16 @@
 // import { createDBHandler } from "/opt/nodejs/utils/db.js";
 // import logger from "/opt/nodejs/utils/logger.js";
-// import UserModel from "/opt/nodejs/models/UserModel.js";
 // import { createResponse } from "/opt/nodejs/utils/api.js";
 // import ProjectModel from "/opt/nodejs/models/ProjectModel.js";
 // import WorkflowModel from "/opt/nodejs/models/WorkflowModel.js";
 import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
 import logger from "../layers/common/nodejs/utils/logger.js";
-import UserModel from "../layers/common/nodejs/models/UserModel.js";
 import { createResponse } from "../layers/common/nodejs/utils/api.js";
 import ProjectModel from "../layers/common/nodejs/models/ProjectModel.js";
 import WorkflowModel from "../layers/common/nodejs/models/WorkflowModel.js";
 import { ProjectService } from "./service/project-service.js";
 import { WorkflowService } from "./service/workflow-service.js";
 import { WorkflowController } from "./controller/workflow-controller.js";
-import { UserService } from "./service/user-service.js";
 
 const { MONGO_URI, MDataBase } = process.env;
 
@@ -21,9 +18,8 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    logger.info("received Create Workflow event:", JSON.stringify(event));
+    logger.info("--> received fork workflow event:", JSON.stringify(event));
     const projectService = new ProjectService(dbHandler, logger, ProjectModel);
-    const userService = new UserService(dbHandler, logger, UserModel);
     const workflowService = new WorkflowService(
       dbHandler,
       logger,
@@ -34,12 +30,12 @@ export const handler = async (event) => {
       projectService,
       logger,
       createResponse,
-      userService
+      null
     );
 
-    return workflowController.createWorkflow(event);
-  } catch (err) {
-    logger.error("--- UNHANDLED FATAL ERROR in handler ---", err);
+    return workflowController.forkWorkflow(event);
+  } catch (error) {
+    logger.error("--- UNHANDLED FATAL ERROR in handler ---", error);
     // This is a fallback error response.
     return {
       statusCode: 500,

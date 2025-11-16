@@ -55,15 +55,20 @@ export class UserController {
         typeof event.body === "string"
           ? JSON.parse(event.body)
           : event.body || {};
+
       if (!body || Object.keys(body).length === 0) {
         return this.createResponse(400, {
           message: "Profile data is required.",
         });
       }
 
+      const { full_name, profile } = body;
+      console.log(full_name, profile);
+
       const updatedUser = await this.userService.updateUserProfile(
         cognitoSub,
-        body
+        full_name,
+        profile
       );
 
       return this.createResponse(200, {
@@ -74,6 +79,62 @@ export class UserController {
       this.logger.error("Error in updateUserProfile:", error);
       console.log(error);
       return this.createResponse(500, { message: "Internal server error." });
+    }
+  }
+
+  async changePassword(event) {
+    try {
+      this.logger.info("--> changePassword controller initialised");
+
+      const cognitoSub = event.requestContext?.authorizer?.claims?.sub;
+      if (!cognitoSub) {
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const body =
+        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
+      const { currentPassword, newPassword } = body;
+
+      const result = await this.userService.changePassword(
+        cognitoSub,
+        newPassword
+      );
+
+      return this.createResponse(result.status, { message: result.message });
+    } catch (error) {
+      this.logger.error(
+        "--> changePassword controller failed",
+        JSON.stringify(error.message)
+      );
+      return this.createResponse(500, { message: "Internal server error" });
+    }
+  }
+
+  async updateTheme(event) {
+    try {
+      this.logger.info("--> updateTheme controller initialised");
+
+      const cognitoSub = event.requestContext?.authorizer?.claims?.sub;
+      if (!cognitoSub) {
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const body =
+        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
+      const { theme } = body;
+
+      const result = await this.userService.updateTheme(cognitoSub, theme);
+
+      return this.createResponse(result.status, { message: result });
+    } catch (error) {
+      this.logger.error("--> updateTheme controller failed", error);
+      return this.createResponse(500, { message: "Internal server error" });
     }
   }
 }
