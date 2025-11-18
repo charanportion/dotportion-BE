@@ -22,9 +22,28 @@ export class SchemaController {
   async createSchema(event) {
     try {
       this.logger.info("-->createSchema Controller Started");
-      const body = this.parseBody(event.body);
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       const { provider, collection, schema } = body;
-      const { tenant, projectId } = event.pathParameters;
+      const { projectId } = event.pathParameters;
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -52,8 +71,18 @@ export class SchemaController {
   async getSchema(event) {
     try {
       this.logger.info("-->getSchema Controller Started");
-      const { tenant, projectId, collection } = event.pathParameters;
+      const { projectId, collection } = event.pathParameters;
       const { provider } = event.queryStringParameters || {};
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -84,9 +113,27 @@ export class SchemaController {
   async updateSchema(event) {
     try {
       this.logger.info("-->updateSchema Controller Started");
-      const body = this.parseBody(event.body);
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
       const { provider, schema } = body;
-      const { tenant, projectId, collection } = event.pathParameters;
+      const { projectId, collection } = event.pathParameters;
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -114,8 +161,18 @@ export class SchemaController {
   async deleteSchema(event) {
     try {
       this.logger.info("-->deleteSchema Controller Started");
-      const { tenant, projectId, collection } = event.pathParameters;
+      const { projectId, collection } = event.pathParameters;
       const { provider } = event.queryStringParameters || {};
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -146,8 +203,18 @@ export class SchemaController {
   async getAvailableCollections(event) {
     try {
       this.logger.info("-->getAvailableCollections Controller Started");
-      const { tenant, projectId } = event.pathParameters;
+      const { projectId } = event.pathParameters;
       const { provider } = event.queryStringParameters || {};
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -177,8 +244,18 @@ export class SchemaController {
   async getCollectionParameters(event) {
     try {
       this.logger.info("-->getCollectionParameters Controller Started");
-      const { tenant, projectId, collection } = event.pathParameters;
+      const { projectId, collection } = event.pathParameters;
       const { provider } = event.queryStringParameters || {};
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });
@@ -209,8 +286,18 @@ export class SchemaController {
   async getAllCollectionsWithParameters(event) {
     try {
       this.logger.info("-->getAllCollectionsWithParameters Controller Started");
-      const { tenant, projectId } = event.pathParameters;
+      const { projectId } = event.pathParameters;
       const { provider } = event.queryStringParameters || {};
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, { error: "Project ID is required" });

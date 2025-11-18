@@ -12,27 +12,30 @@ export class LogController {
         `-->createExecutionLog controller invoked with event:`,
         event
       );
-      const { body } = event;
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
-        return this.createResponse(400, {
-          error: "Request body is missing.",
-        });
+        return this.createResponse(400, { error: "Request body is missing." });
       }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       //   const logData = JSON.parse(body);
       // const logData = body;
-      let logData;
-      try {
-        logData = JSON.parse(body);
-      } catch (parseError) {
-        this.logger.error("Error parsing request body:", parseError);
-        return this.createResponse(400, {
-          error: "Invalid JSON in request body.",
-        });
-      }
-      this.logger.info(`Received request body: ${JSON.stringify(logData)}`);
+      // let logData;
+      // try {
+      //   logData = JSON.parse(body);
+      // } catch (parseError) {
+      //   this.logger.error("Error parsing request body:", parseError);
+      //   return this.createResponse(400, {
+      //     error: "Invalid JSON in request body.",
+      //   });
+      // }
+      // this.logger.info(`Received request body: ${JSON.stringify(logData)}`);
 
-      const { project, workflow, trigger, plan } = logData;
+      const { project, workflow, trigger, plan } = body;
 
       if (!project) {
         this.logger.error(
@@ -89,27 +92,20 @@ export class LogController {
         `-->addNodeStepToLog controller invoked with event:`,
         event
       );
-      const { body } = event;
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
-        return this.createResponse(400, {
-          error: "Request body is missing.",
-        });
+        return this.createResponse(400, { error: "Request body is missing." });
       }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       //   const logData = JSON.parse(body);
       //   const logData = body;
-      let logData;
-      try {
-        logData = JSON.parse(body);
-      } catch (parseError) {
-        this.logger.error("Error parsing request body:", parseError);
-        return this.createResponse(400, {
-          error: "Invalid JSON in request body.",
-        });
-      }
-      this.logger.info(`Received request body: ${JSON.stringify(logData)}`);
 
-      const { stepData } = logData;
+      const { stepData } = body;
       const { logId } = event.pathParameters;
 
       if (!logId) {
@@ -155,27 +151,20 @@ export class LogController {
         `-->finalizeExecutionLog controller invoked with event:`,
         event
       );
-      const { body } = event;
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
-        return this.createResponse(400, {
-          error: "Request body is missing.",
-        });
+        return this.createResponse(400, { error: "Request body is missing." });
       }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       //   const logData = JSON.parse(body);
       //   const logData = body;
-      let logData;
-      try {
-        logData = JSON.parse(body);
-      } catch (parseError) {
-        this.logger.error("Error parsing request body:", parseError);
-        return this.createResponse(400, {
-          error: "Invalid JSON in request body.",
-        });
-      }
-      this.logger.info(`Received request body: ${JSON.stringify(logData)}`);
 
-      const { status, response, durationMs } = logData;
+      const { status, response, durationMs } = body;
       const { logId } = event.pathParameters;
 
       if (!logId) {

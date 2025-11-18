@@ -1,14 +1,14 @@
 {
   "pathParameters": {
-    "logId": "6898b8914e21d7a777452d6b"
+    "logId": "691c0b92d1bc809c6d3980d1"
   },
   "body": {
     "stepData": {
       "nodeId": "node_1a2b3c",
       "nodeName": "Fetch User from DB",
       "status": "success",
-      "startedAt": "2025-08-10T15:15:10.100Z",
-      "finishedAt": "2025-08-10T15:15:10.250Z",
+      "startedAt": "2025-11-18T11:15:10.100Z",
+      "finishedAt": "2025-11-18T11:15:10.250Z",
       "durationMs": 150,
       "input": {
         "userId": "usr_c4d5e6f7"

@@ -7,8 +7,8 @@ export class ExternalDbController {
     this.logger.info("--> ExternalDbController initialized");
   }
 
-  async _getProvider(cognitoSub, secretId) {
-    const secret = await this.secretService.getSecretById(cognitoSub, secretId);
+  async _getProvider(userId, secretId) {
+    const secret = await this.secretService.getSecretById(userId, secretId);
     if (secret.error) {
       return { error: true, message: secret.message, statusCode: 404 };
     }
@@ -29,9 +29,16 @@ export class ExternalDbController {
     try {
       this.logger.info(`--> event getCollections: ${JSON.stringify(event)}`);
       const { secretId } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-
-      const provider = await this._getProvider(cognitoSub, secretId);
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+      const provider = await this._getProvider(userId, secretId);
       if (provider.error) {
         return this.createResponse(provider.statusCode, {
           message: provider.message,
@@ -52,10 +59,18 @@ export class ExternalDbController {
   async getDocuments(event) {
     try {
       const { secretId, collectionName } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
       const { page, limit } = event.queryStringParameters || {};
 
-      const provider = await this._getProvider(cognitoSub, secretId);
+      const provider = await this._getProvider(userId, secretId);
       if (provider.error) {
         return this.createResponse(provider.statusCode, {
           message: provider.message,
@@ -76,11 +91,26 @@ export class ExternalDbController {
   async createDocument(event) {
     try {
       const { secretId, collectionName } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
       const body =
-        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
-      const provider = await this._getProvider(cognitoSub, secretId);
+      const provider = await this._getProvider(userId, secretId);
       if (provider.error) {
         return this.createResponse(provider.statusCode, {
           message: provider.message,
@@ -101,11 +131,26 @@ export class ExternalDbController {
   async updateDocument(event) {
     try {
       const { secretId, collectionName, documentId } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
       const body =
-        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
-      const provider = await this._getProvider(cognitoSub, secretId);
+      const provider = await this._getProvider(userId, secretId);
       if (provider.error) {
         return this.createResponse(provider.statusCode, {
           message: provider.message,
@@ -133,9 +178,16 @@ export class ExternalDbController {
   async deleteDocument(event) {
     try {
       const { secretId, collectionName, documentId } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-
-      const provider = await this._getProvider(cognitoSub, secretId);
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+      const provider = await this._getProvider(userId, secretId);
       if (provider.error) {
         return this.createResponse(provider.statusCode, {
           message: provider.message,
@@ -165,12 +217,21 @@ export class ExternalDbController {
       this.logger.info(
         `--> event getPlatformCollections: ${JSON.stringify(event)}`
       );
-      const { tenant, projectId } = event.pathParameters;
+      const { projectId } = event.pathParameters;
 
-      if (!tenant || !projectId) {
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      if (!projectId) {
         return this.createResponse(400, {
-          message:
-            "Tenant and projectId are required for platform database access",
+          message: "ProjectId is required for platform database access",
         });
       }
 
@@ -193,12 +254,23 @@ export class ExternalDbController {
 
   async getPlatformDocuments(event) {
     try {
-      const { tenant, projectId, collectionName } = event.pathParameters;
+      const { projectId, collectionName } = event.pathParameters;
+
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
       const { page, limit } = event.queryStringParameters || {};
 
-      if (!tenant || !projectId || !collectionName) {
+      if (!projectId || !collectionName) {
         return this.createResponse(400, {
-          message: "Tenant, projectId, and collectionName are required",
+          message: "ProjectId, and collectionName are required",
         });
       }
 
@@ -216,13 +288,29 @@ export class ExternalDbController {
 
   async createPlatformDocument(event) {
     try {
-      const { tenant, projectId, collectionName } = event.pathParameters;
+      const { projectId, collectionName } = event.pathParameters;
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
       const body =
-        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
-      if (!tenant || !projectId || !collectionName) {
+      if (!projectId || !collectionName) {
         return this.createResponse(400, {
-          message: "Tenant, projectId, and collectionName are required",
+          message: "ProjectId, and collectionName are required",
         });
       }
 
@@ -245,15 +333,31 @@ export class ExternalDbController {
 
   async updatePlatformDocument(event) {
     try {
-      const { tenant, projectId, collectionName, documentId } =
-        event.pathParameters;
-      const body =
-        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+      const { projectId, collectionName, documentId } = event.pathParameters;
 
-      if (!tenant || !projectId || !collectionName || !documentId) {
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
+      if (!projectId || !collectionName || !documentId) {
         return this.createResponse(400, {
-          message:
-            "Tenant, projectId, collectionName, and documentId are required",
+          message: "ProjectId, collectionName, and documentId are required",
         });
       }
 
@@ -282,13 +386,21 @@ export class ExternalDbController {
 
   async deletePlatformDocument(event) {
     try {
-      const { tenant, projectId, collectionName, documentId } =
-        event.pathParameters;
+      const { projectId, collectionName, documentId } = event.pathParameters;
 
-      if (!tenant || !projectId || !collectionName || !documentId) {
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      if (!projectId || !collectionName || !documentId) {
         return this.createResponse(400, {
-          message:
-            "Tenant, projectId, collectionName, and documentId are required",
+          message: "ProjectId, collectionName, and documentId are required",
         });
       }
 

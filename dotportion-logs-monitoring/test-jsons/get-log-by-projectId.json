@@ -1,0 +1,9 @@
+{
+  "pathParameters": {
+    "projectId": "6919d3f8d037ac99f94f89ca"
+  },
+  "queryStringParameters": {
+    "page": "1",
+    "limit": "10"
+  }
+}

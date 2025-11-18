@@ -6,7 +6,7 @@ export class WorkflowService {
     this.logger.info(`-->Workflow Service initialized`);
   }
 
-  async createWorkflow(workflowData, projectId, cognitoSub, tenant) {
+  async createWorkflow(workflowData, projectId, userId, tenant) {
     try {
       this.logger.info(
         `-->createWorkflow service invoked with workflowData:`,
@@ -16,9 +16,9 @@ export class WorkflowService {
         this.logger.warn("createWorkflow called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("createWorkflow called without a cognitoSub.");
-        return { error: true, message: "No Cognito Sub" };
+      if (!userId) {
+        this.logger.warn("createWorkflow called without a userId.");
+        return { error: true, message: "No UserId" };
       }
       if (!tenant) {
         this.logger.warn("createWorkflow called without a tenant.");
@@ -32,7 +32,7 @@ export class WorkflowService {
       const workflow = await this.WorkflowModel.create({
         ...workflowData,
         project: projectId,
-        owner: cognitoSub,
+        owner: userId,
         tenant,
         isPublic: workflowData.isPublic || false,
         visibility: workflowData.visibility || "private",
@@ -66,7 +66,7 @@ export class WorkflowService {
     }
   }
 
-  async getWorkflowById(workflowId, cognitoSub) {
+  async getWorkflowById(workflowId, userId) {
     try {
       this.logger.info(
         `-->getWorkflowById service invoked with workflowId:`,
@@ -76,14 +76,14 @@ export class WorkflowService {
         this.logger.warn("getWorkflowById called without a workflowId.");
         return { error: true, message: "No Workflow ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getWorkflowById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getWorkflowById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
       const workflow = await this.WorkflowModel.findOne({
         _id: workflowId,
-        $or: [{ owner: cognitoSub }, { visibility: "public" }],
+        $or: [{ owner: userId }, { visibility: "public" }],
       });
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
@@ -95,7 +95,7 @@ export class WorkflowService {
     }
   }
 
-  async updateWorkflow(workflowId, cognitoSub, workflowData) {
+  async updateWorkflow(workflowId, userId, workflowData) {
     try {
       this.logger.info(
         `-->updateWorkflow service invoked with workflowId:`,
@@ -105,8 +105,8 @@ export class WorkflowService {
         this.logger.warn("updateWorkflow called without a workflowId.");
         return { error: true, message: "No Workflow ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("updateWorkflow called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("updateWorkflow called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       if (!workflowData) {
@@ -116,7 +116,7 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const { forkedFrom, forkCount, ...allowedData } = workflowData;
       const workflow = await this.WorkflowModel.findOneAndUpdate(
-        { _id: workflowId, owner: cognitoSub },
+        { _id: workflowId, owner: userId },
         allowedData,
         { new: true }
       );
@@ -131,7 +131,7 @@ export class WorkflowService {
     }
   }
 
-  async deleteWorkflow(workflowId, cognitoSub) {
+  async deleteWorkflow(workflowId, userId) {
     try {
       this.logger.info(
         `-->deleteWorkflow service invoked with workflowId:`,
@@ -141,14 +141,14 @@ export class WorkflowService {
         this.logger.warn("deleteWorkflow called without a workflowId.");
         return { error: true, message: "No Workflow ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("deleteWorkflow called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("deleteWorkflow called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
       const workflow = await this.WorkflowModel.findOneAndDelete({
         _id: workflowId,
-        owner: cognitoSub,
+        owner: userId,
       });
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
@@ -160,7 +160,7 @@ export class WorkflowService {
     }
   }
 
-  async toggleWorkflowDeployment(workflowId, cognitoSub) {
+  async toggleWorkflowDeployment(workflowId, userId) {
     try {
       this.logger.info(
         `-->toggleWorkflowDeployment service invoked with workflowId:`,
@@ -172,10 +172,8 @@ export class WorkflowService {
         );
         return { error: true, message: "No Workflow ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn(
-          "toggleWorkflowDeployment called without a cognitoSub."
-        );
+      if (!userId) {
+        this.logger.warn("toggleWorkflowDeployment called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
@@ -183,7 +181,7 @@ export class WorkflowService {
       // First get the current workflow to check its deployment status
       const currentWorkflow = await this.WorkflowModel.findOne({
         _id: workflowId,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!currentWorkflow) {
@@ -195,7 +193,7 @@ export class WorkflowService {
 
       // Update workflow with toggled deployment status
       const workflow = await this.WorkflowModel.findOneAndUpdate(
-        { _id: workflowId, owner: cognitoSub },
+        { _id: workflowId, owner: userId },
         { isDeployed: newDeploymentStatus },
         { new: true }
       );
@@ -215,13 +213,13 @@ export class WorkflowService {
     }
   }
 
-  async forkWorkflow(workflowId, projectId, cognitoSub) {
+  async forkWorkflow(workflowId, projectId, userId) {
     try {
       this.logger.info(
         `--> forkWorkflow service invoked with workflowId: ${workflowId} and projectId: ${projectId}`
       );
 
-      if (!workflowId || !projectId || !cognitoSub) {
+      if (!workflowId || !projectId || !userId) {
         return {
           error: true,
           message: "Missing required parameters",
@@ -253,7 +251,7 @@ export class WorkflowService {
         method: source.method,
         path: source.path,
         project: projectId,
-        owner: cognitoSub,
+        owner: userId,
         tenant: source.tenant,
         nodes: source.nodes,
         edges: source.edges,

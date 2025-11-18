@@ -13,8 +13,7 @@ custom:
     createRoute53Record: false
     basePath: "schemacanvas"
     endpointType: "regional"
-  cognito:
-    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
 
 provider:
   name: aws
@@ -27,6 +26,10 @@ provider:
       Action:
         - "ssm:GetParameter"
       Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
 
   # Environment variables will be available to all your functions
   # It's highly recommended to use a service like AWS Secrets Manager for production
@@ -57,7 +60,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   updateSchemaCanvas:
     handler: update-schema-canvas.handler
@@ -79,7 +85,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   getSchemaCanvas:
     handler: get-schema-canvas.handler
@@ -101,7 +110,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   generateSchemaCanvas:
     handler: generate-schema-canvas.handler
@@ -123,7 +135,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
 layers:
   common:

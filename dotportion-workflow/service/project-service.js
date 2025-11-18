@@ -6,7 +6,7 @@ export class ProjectService {
     this.logger.info(`-->Project Service initialized in Workflow Module`);
   }
 
-  async getProjectById(projectId, cognitoSub) {
+  async getProjectById(projectId, userId) {
     try {
       this.logger.info(
         `-->getProjectById service invoked with projectId:`,
@@ -16,15 +16,18 @@ export class ProjectService {
         this.logger.warn("getProjectById called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getProjectById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getProjectById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
+
       await this.dbHandler.connectDb();
+
       const project = await this.ProjectModel.findOne({
         _id: projectId,
-        owner: cognitoSub,
+        owner: userId,
       });
+
       return project;
     } catch (error) {
       this.logger.error("Error in getProjectById service:", error);

@@ -29,9 +29,27 @@ export class SchemaCanvasController {
   async createSchemaCanvas(event) {
     try {
       this.logger.info("-->createSchemaCanvas Controller Started");
-      const body = this.parseBody(event.body);
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       const { projectId, dataBase, nodes, edges } = body;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, {
@@ -53,16 +71,11 @@ export class SchemaCanvasController {
           error: "edges is required",
         });
       }
-      if (!cognitoSub) {
-        return this.createResponse(401, {
-          error: "User ID not found in request",
-        });
-      }
 
       const result = await this.schemaCanvasService.createSchemaCanvas(
         projectId,
         dataBase,
-        cognitoSub,
+        userId,
         nodes,
         edges
       );
@@ -84,9 +97,27 @@ export class SchemaCanvasController {
   async updateSchemaCanvas(event) {
     try {
       this.logger.info("-->createSchemaCanvas Controller Started");
-      const body = this.parseBody(event.body);
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
+
       const { projectId, dataBase, nodes, edges } = body;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, {
@@ -108,16 +139,11 @@ export class SchemaCanvasController {
           error: "edges is required",
         });
       }
-      if (!cognitoSub) {
-        return this.createResponse(401, {
-          error: "User ID not found in request",
-        });
-      }
 
       const result = await this.schemaCanvasService.updateSchemaCanvas(
         projectId,
         dataBase,
-        cognitoSub,
+        userId,
         nodes,
         edges
       );
@@ -140,7 +166,15 @@ export class SchemaCanvasController {
     try {
       this.logger.info("-->createSchemaCanvas Controller Started");
       const { projectId, dataBase } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, {
@@ -153,16 +187,10 @@ export class SchemaCanvasController {
         });
       }
 
-      if (!cognitoSub) {
-        return this.createResponse(401, {
-          error: "User ID not found in request",
-        });
-      }
-
       const result = await this.schemaCanvasService.getSchemaCanvas(
         projectId,
         dataBase,
-        cognitoSub
+        userId
       );
 
       if (result.error) {
@@ -183,7 +211,15 @@ export class SchemaCanvasController {
     try {
       this.logger.info("-->generateSchema Controller Started");
       const { projectId, dataBase } = event.pathParameters;
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
 
       if (!projectId) {
         return this.createResponse(400, {
@@ -195,18 +231,13 @@ export class SchemaCanvasController {
           error: "dataBase is required",
         });
       }
-      if (!cognitoSub) {
-        return this.createResponse(401, {
-          error: "User ID not found in request",
-        });
-      }
 
       let secret = null;
 
       if (dataBase !== "platform") {
         secret = await this.secretService.getSecret(
           projectId,
-          cognitoSub,
+          userId,
           dataBase
         );
 
@@ -215,10 +246,14 @@ export class SchemaCanvasController {
         }
       }
 
-      const tenant = await this.userService.getTenant(cognitoSub);
-
+      const tenant = event.requestContext.authorizer.name;
       if (!tenant) {
-        return this.createResponse(400, { error: tenant.message });
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
       }
 
       this.logger.info(`-->user tenant name ${JSON.stringify(tenant)}`);
@@ -226,7 +261,7 @@ export class SchemaCanvasController {
       const result = await this.schemaCanvasService.generateSchema(
         projectId,
         dataBase,
-        cognitoSub,
+        userId,
         secret,
         tenant
       );

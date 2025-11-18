@@ -38,7 +38,7 @@ export class SchemaCanvasService {
     }
   }
 
-  async createSchemaCanvas(projectId, dataBase, cognitoSub, nodes, edges) {
+  async createSchemaCanvas(projectId, dataBase, userId, nodes, edges) {
     try {
       this.logger.info(
         `-->createSchemaCanvas service invoked with projectId: ${projectId}, dataBase: ${dataBase}`
@@ -51,9 +51,9 @@ export class SchemaCanvasService {
         this.logger.warn("createSchemaCanvas called without a dataBase.");
         return { error: true, message: "No dataBase" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("createSchemaCanvas called without a cognitoSub.");
-        return { error: true, message: "No cognitoSub" };
+      if (!userId) {
+        this.logger.warn("createSchemaCanvas called without a userId.");
+        return { error: true, message: "No userId" };
       }
       if (!nodes) {
         this.logger.warn("createSchemaCanvas called without a nodes.");
@@ -69,7 +69,7 @@ export class SchemaCanvasService {
       const schemaCanvas = new this.schemaCanvasModel({
         projectId,
         dataBase,
-        owner: cognitoSub,
+        owner: userId,
         nodes,
         edges,
       });
@@ -82,7 +82,7 @@ export class SchemaCanvasService {
     }
   }
 
-  async updateSchemaCanvas(projectId, dataBase, cognitoSub, nodes, edges) {
+  async updateSchemaCanvas(projectId, dataBase, userId, nodes, edges) {
     try {
       this.logger.info(
         `-->createSchemaCanvas service invoked with projectId: ${projectId}, dataBase: ${dataBase}`
@@ -95,9 +95,9 @@ export class SchemaCanvasService {
         this.logger.warn("createSchemaCanvas called without a dataBase.");
         return { error: true, message: "No dataBase" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("createSchemaCanvas called without a cognitoSub.");
-        return { error: true, message: "No cognitoSub" };
+      if (!userId) {
+        this.logger.warn("createSchemaCanvas called without a userId.");
+        return { error: true, message: "No userId" };
       }
       if (!nodes) {
         this.logger.warn("createSchemaCanvas called without a nodes.");
@@ -114,7 +114,7 @@ export class SchemaCanvasService {
         {
           projectId,
           dataBase,
-          owner: cognitoSub,
+          owner: userId,
         },
         { nodes, edges }
       );
@@ -132,7 +132,7 @@ export class SchemaCanvasService {
     }
   }
 
-  async getSchemaCanvas(projectId, dataBase, cognitoSub) {
+  async getSchemaCanvas(projectId, dataBase, userId) {
     try {
       this.logger.info(
         `-->getSchemaCanvas service invoked with projectId: ${projectId}, dataBase: ${dataBase}`
@@ -145,9 +145,9 @@ export class SchemaCanvasService {
         this.logger.warn("getSchemaCanvas called without a dataBase.");
         return { error: true, message: "No dataBase" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getSchemaCanvas called without a cognitoSub.");
-        return { error: true, message: "No cognitoSub" };
+      if (!userId) {
+        this.logger.warn("getSchemaCanvas called without a userId.");
+        return { error: true, message: "No userId" };
       }
 
       await this.dbHandler.connectDb();
@@ -155,7 +155,7 @@ export class SchemaCanvasService {
       const schemaCanvas = await this.schemaCanvasModel.find({
         projectId,
         dataBase,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!schemaCanvas) {
@@ -280,7 +280,7 @@ export class SchemaCanvasService {
     return collections;
   }
 
-  async generateSchema(projectId, dataBase, cognitoSub, secret, tenant) {
+  async generateSchema(projectId, dataBase, userId, secret, tenant) {
     try {
       this.logger.info(
         `-->generateSchema service invoked with projectId: ${projectId}, dataBase: ${dataBase}`
@@ -293,9 +293,9 @@ export class SchemaCanvasService {
         this.logger.warn("generateSchema called without a dataBase.");
         return { error: true, message: "No dataBase" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("generateSchema called without a cognitoSub.");
-        return { error: true, message: "No cognitoSub" };
+      if (!userId) {
+        this.logger.warn("generateSchema called without a userId.");
+        return { error: true, message: "No userId" };
       }
       if (!tenant) {
         this.logger.warn("generateSchema called without a tenant.");
@@ -306,12 +306,7 @@ export class SchemaCanvasService {
         return { error: true, message: "No secret" };
       }
 
-      const schema = await this.getSchemaCanvas(
-        projectId,
-        dataBase,
-        cognitoSub
-      );
-
+      const schema = await this.getSchemaCanvas(projectId, dataBase, userId);
       if (schema.error) {
         return {
           error: true,
