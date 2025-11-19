@@ -206,6 +206,24 @@ functions:
             resultTtlInSeconds: 300 # Cache authorization for 5 minutes
             arn: ${self:custom.authorizerArn}
 
+  getWorkflowDocs:
+    handler: get-workflow-docs.handler
+    events:
+      - http:
+          path: /{workflowId}/docs
+          method: get
+          cors:
+            origins:
+              - "http://localhost:3000"
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            allowCredentials: true
+          authorizer:
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300
+            arn: ${self:custom.authorizerArn}
+
 # layers:
 #   common:
 #     path: ../layers/common

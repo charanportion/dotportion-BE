@@ -533,4 +533,46 @@ export class WorkflowController {
       });
     }
   }
+
+  async getWorkflowDocs(event) {
+    try {
+      this.logger.info("--> getWorkflowDocs controller is initialised");
+
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+
+      const { workflowId } = event.pathParameters;
+      if (!workflowId) {
+        return this.createResponse(400, { error: "workflowId is missing." });
+      }
+
+      const result = await this.workflowService.getWorkflowDocs(
+        workflowId,
+        userId
+      );
+
+      if (result.error) {
+        return this.createResponse(result.statusCode || 400, {
+          message: result.message,
+        });
+      }
+
+      return this.createResponse(200, { data: result });
+    } catch (error) {
+      this.logger.error(
+        "Error in getWorkflowDocs controller",
+        JSON.stringify(error)
+      );
+      return this.createResponse(500, {
+        message: "Internal server error.",
+      });
+    }
+  }
 }
