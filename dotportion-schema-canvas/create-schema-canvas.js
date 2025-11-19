@@ -1,11 +1,11 @@
-import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
-import logger from "../layers/common/nodejs/utils/logger.js";
-import { createResponse } from "../layers/common/nodejs/utils/api.js";
-import SchemaModel from "../layers/common/nodejs/models/SchemaModel.js";
-// import { createDBHandler } from "/opt/nodejs/utils/db.js";
-// import logger from "/opt/nodejs/utils/logger.js";
-// import { createResponse } from "/opt/nodejs/utils/api.js";
-// import SchemaModel from "/opt/nodejs/models/SchemaModel.js";
+// import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
+// import logger from "../layers/common/nodejs/utils/logger.js";
+// import { createResponse } from "../layers/common/nodejs/utils/api.js";
+// import SchemaModel from "../layers/common/nodejs/models/SchemaModel.js";
+import { createDBHandler } from "/opt/nodejs/utils/db.js";
+import logger from "/opt/nodejs/utils/logger.js";
+import { createResponse } from "/opt/nodejs/utils/api.js";
+import SchemaModel from "/opt/nodejs/models/SchemaModel.js";
 import { SchemaCanvasService } from "./service/schema-canvas-service.js";
 import { SchemaCanvasController } from "./controller/schema-canvas-controller.js";
 
