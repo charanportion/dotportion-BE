@@ -20,26 +20,27 @@ export class WorkflowController {
         "--> createWorkflow controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { body } = event;
-      const { projectId } = event.pathParameters;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
         return this.createResponse(400, { error: "Request body is missing." });
       }
-
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
-      const workflowData = JSON.parse(body);
+      const { projectId } = event.pathParameters;
+
+      // const workflowData = JSON.parse(body);
 
       if (!projectId) {
         this.logger.error(
@@ -53,7 +54,7 @@ export class WorkflowController {
       // Verify that the project exists and belongs to the user
       const project = await this.projectService.getProjectById(
         projectId,
-        cognitoSub
+        userId
       );
       if (!project || project.error) {
         this.logger.error("Project not found or access denied");
@@ -62,22 +63,22 @@ export class WorkflowController {
         });
       }
 
-      const user = await this.userService.findUserByCognitoSub(cognitoSub);
-      if (!user || user.error) {
-        this.logger.error("User not found or access denied");
-        return this.createResponse(404, {
-          message: "User not found or access denied.",
+      // Extract tenant from project or use a default
+      const tenant = event.requestContext.authorizer.name;
+      if (!tenant) {
+        this.logger.error(
+          "tenant not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
         });
       }
 
-      // Extract tenant from project or use a default
-      const tenant = user.name;
-
       // Create the workflow
       const workflow = await this.workflowService.createWorkflow(
-        workflowData,
+        body,
         projectId,
-        cognitoSub,
+        userId,
         tenant
       );
 
@@ -113,7 +114,6 @@ export class WorkflowController {
         "Error in createWorkflow handler:",
         JSON.stringify(error)
       );
-      console.log("Error", error.message, error.code, error.status);
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -126,17 +126,16 @@ export class WorkflowController {
         "--> getWorkflowsByProject controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { projectId } = event.pathParameters;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { projectId } = event.pathParameters;
 
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
@@ -146,8 +145,9 @@ export class WorkflowController {
       // Verify that the project exists and belongs to the user
       const project = await this.projectService.getProjectById(
         projectId,
-        cognitoSub
+        userId
       );
+
       if (!project || project.error) {
         this.logger.error("Project not found or access denied");
         return this.createResponse(404, {
@@ -182,17 +182,16 @@ export class WorkflowController {
   async getWorkflow(event) {
     try {
       this.logger.info("--> getWorkflow controller invoked with event:", event);
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { workflowId } = event.pathParameters;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { workflowId } = event.pathParameters;
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
@@ -201,8 +200,9 @@ export class WorkflowController {
 
       const workflow = await this.workflowService.getWorkflowById(
         workflowId,
-        cognitoSub
+        userId
       );
+
       if (workflow.error) {
         this.logger.error("Error getting workflow:", workflow.message);
         return this.createResponse(500, { message: workflow.message });
@@ -233,18 +233,25 @@ export class WorkflowController {
         "--> updateWorkflow controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { workflowId } = event.pathParameters;
-      const { body } = event;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { workflowId } = event.pathParameters;
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
@@ -257,12 +264,12 @@ export class WorkflowController {
       }
 
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
-      const workflowData = JSON.parse(body);
+      // const workflowData = JSON.parse(body);
 
       const result = await this.workflowService.updateWorkflow(
         workflowId,
-        cognitoSub,
-        workflowData
+        userId,
+        body
       );
       if (result.error) {
         this.logger.error("Error updating workflow:", result.message);
@@ -297,17 +304,26 @@ export class WorkflowController {
         "--> deleteWorkflow controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { workflowId } = event.pathParameters;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { workflowId } = event.pathParameters;
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
@@ -317,7 +333,7 @@ export class WorkflowController {
       // First get the workflow to find its project
       const workflow = await this.workflowService.getWorkflowById(
         workflowId,
-        cognitoSub
+        userId
       );
       if (workflow.error) {
         this.logger.error("Error getting workflow:", workflow.message);
@@ -333,7 +349,7 @@ export class WorkflowController {
       // Delete the workflow
       const result = await this.workflowService.deleteWorkflow(
         workflowId,
-        cognitoSub
+        userId
       );
       if (result.error) {
         this.logger.error("Error deleting workflow:", result.message);
@@ -381,17 +397,16 @@ export class WorkflowController {
         "--> toggleWorkflowDeployment controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { workflowId } = event.pathParameters;
-
-      if (!cognitoSub) {
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { workflowId } = event.pathParameters;
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
@@ -400,7 +415,7 @@ export class WorkflowController {
 
       const result = await this.workflowService.toggleWorkflowDeployment(
         workflowId,
-        cognitoSub
+        userId
       );
       if (result.error) {
         this.logger.error(
@@ -434,16 +449,25 @@ export class WorkflowController {
         event
       );
 
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { workflowId } = event.pathParameters;
-      const { body } = event;
-
-      if (!cognitoSub) {
-        this.logger.error("Missing Cognito user identifier.");
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+      const { workflowId } = event.pathParameters;
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Missing workflowId in path parameters.");
@@ -455,17 +479,12 @@ export class WorkflowController {
         return this.createResponse(400, { error: "Request body is missing." });
       }
 
-      const { projectId } = JSON.parse(body);
-
-      if (!projectId) {
-        this.logger.error("Missing projectId in body.");
-        return this.createResponse(400, { error: "Missing projectId." });
-      }
+      const { projectId } = body;
 
       // Verify target project exists and belongs to user
       const project = await this.projectService.getProjectById(
         projectId,
-        cognitoSub
+        userId
       );
       if (!project || project.error) {
         this.logger.error("Project not found or access denied.");
@@ -478,7 +497,7 @@ export class WorkflowController {
       const forked = await this.workflowService.forkWorkflow(
         workflowId,
         projectId,
-        cognitoSub
+        userId
       );
 
       if (forked.error) {

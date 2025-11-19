@@ -12,42 +12,40 @@ export class ProjectController {
         "--> createProject controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { body } = event;
-      if (!cognitoSub) {
+
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
         return this.createResponse(400, { error: "Request body is missing." });
       }
 
-      let projectData;
-      try {
-        projectData = JSON.parse(body);
-      } catch (parseError) {
-        this.logger.error("Error parsing request body:", parseError);
-        return this.createResponse(400, {
-          error: "Invalid JSON in request body.",
-        });
-      }
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
-      this.logger.info(`Received request body: ${JSON.stringify(projectData)}`);
+      const result = await this.projectService.createProject(body, userId);
 
-      const result = await this.projectService.createProject(
-        projectData,
-        cognitoSub
-      );
       if (result.error) {
         this.logger.error("Error creating project:", result.message);
         return this.createResponse(500, { message: result.message });
       }
+
       this.logger.info("Project created successfully:", result);
+
       return this.createResponse(201, {
         message: "Project created successfully.",
         data: result,
@@ -66,17 +64,20 @@ export class ProjectController {
   async getProjects(event) {
     try {
       this.logger.info("--> getProjects controller invoked with event:", event);
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      if (!cognitoSub) {
+
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
-      const result = await this.projectService.getProjectByOwner(cognitoSub);
+      const result = await this.projectService.getProjectByOwner(userId);
       if (result.error) {
         this.logger.error("Error getting projects:", result.message);
         return this.createResponse(500, { message: result.message });
@@ -97,23 +98,28 @@ export class ProjectController {
   async getProject(event) {
     try {
       this.logger.info("--> getProject controller invoked with event:", event);
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { projectId } = event.pathParameters;
-      if (!cognitoSub) {
+
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+
+      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
+
       const result = await this.projectService.getProjectById(
         projectId,
-        cognitoSub
+        userId
       );
       if (result.error) {
         this.logger.error("Error getting project:", result.message);
@@ -138,42 +144,42 @@ export class ProjectController {
         "--> updateProject controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { projectId } = event.pathParameters;
-      const { body } = event;
-      if (!cognitoSub) {
+
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+
+      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
+
+      const body =
+        typeof event.body === "string"
+          ? JSON.parse(event.body)
+          : event.body || {};
+
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
         return this.createResponse(400, { error: "Request body is missing." });
       }
 
-      let projectData;
-      try {
-        projectData = JSON.parse(body);
-      } catch (parseError) {
-        this.logger.error("Error parsing request body:", parseError);
-        return this.createResponse(400, {
-          error: "Invalid JSON in request body.",
-        });
-      }
-
-      this.logger.info(`Received request body: ${JSON.stringify(projectData)}`);
+      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
       const result = await this.projectService.updateProject(
         projectId,
-        cognitoSub,
-        projectData
+        userId,
+        body
       );
+
       if (result.error) {
         this.logger.error("Error updating project:", result.message);
         return this.createResponse(500, { message: result.message });
@@ -185,8 +191,7 @@ export class ProjectController {
       });
     } catch (error) {
       this.logger.error(
-        "Error in updateProject handler:",
-        JSON.stringify(error)
+        `Error in updateProject handler: ${JSON.stringify(error)}`
       );
       return this.createResponse(500, {
         message: "Internal server error.",
@@ -200,29 +205,34 @@ export class ProjectController {
         "--> deleteProject controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { projectId } = event.pathParameters;
-      if (!cognitoSub) {
+
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
+
+      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
-      const result = await this.projectService.deleteProject(
-        projectId,
-        cognitoSub
-      );
+
+      const result = await this.projectService.deleteProject(projectId, userId);
+
       if (result.error) {
         this.logger.error("Error Deleting project:", result.message);
         return this.createResponse(500, { message: result.message });
       }
+
       this.logger.info("Project Deleted successfully:", result);
+
       return this.createResponse(200, {
         message: "Project Deleted successfully.",
         data: result,
@@ -244,23 +254,25 @@ export class ProjectController {
         "--> getCallsOverTime controller invoked with event:",
         event
       );
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const { projectId } = event.pathParameters;
-      const { queryStringParameters } = event;
 
-      if (!cognitoSub) {
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
         this.logger.error(
-          "Cognito 'sub' claim not found in the event. Check authorizer configuration."
+          "userId not found in the event. Check authorizer configuration."
         );
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
+      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
+
+      const { queryStringParameters } = event;
 
       // Parse query parameters
       const range = parseInt(queryStringParameters?.range) || 7;
@@ -277,7 +289,7 @@ export class ProjectController {
 
       const result = await this.projectService.getCallsOverTime(
         projectId,
-        cognitoSub,
+        userId,
         range,
         groupBy,
         selectedDate

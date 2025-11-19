@@ -6,20 +6,18 @@ export class UserService {
     this.logger.info(`-->User Service initialized`);
   }
 
-  async getTenant(cognitoSub) {
+  async getTenant(userId) {
     try {
-      this.logger.info(
-        `-->getTenant service invoked with cognitoSub: ${cognitoSub}`
-      );
-      if (!cognitoSub) {
-        this.logger.warn("getTenant called without a cognitoSub.");
-        return { error: true, message: "No cognitoSub" };
+      this.logger.info(`-->getTenant service invoked with userId: ${userId}`);
+      if (!userId) {
+        this.logger.warn("getTenant called without a userId.");
+        return { error: true, message: "No userId" };
       }
 
       await this.dbHandler.connectDb();
 
       const user = await this.userModel.findOne({
-        cognitoSub: cognitoSub,
+        userId: userId,
       });
 
       if (!user) {

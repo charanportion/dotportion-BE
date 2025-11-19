@@ -6,7 +6,7 @@ export class SecretService {
     this.logger.info(`-->Secret Service initialized`);
   }
 
-  async getSecretById(cognitoSub, secretId) {
+  async getSecretById(userId, secretId) {
     try {
       this.logger.info(
         `-->getSecretById service invoked with secretId:`,
@@ -16,8 +16,8 @@ export class SecretService {
         this.logger.warn("getSecretById called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getSecretById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getSecretById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
 
@@ -25,7 +25,7 @@ export class SecretService {
 
       const secret = await this.SecretModel.findOne({
         _id: secretId,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!secret) {

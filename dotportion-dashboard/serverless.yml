@@ -14,8 +14,7 @@ custom:
     createRoute53Record: false
     basePath: "dashboard"
     endpointType: "regional"
-  cognito:
-    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
 
 provider:
   name: aws
@@ -28,6 +27,10 @@ provider:
       Action:
         - "ssm:GetParameter"
       Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
 
   environment:
     MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
@@ -54,7 +57,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
 plugins:
   - serverless-offline

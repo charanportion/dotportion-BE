@@ -6,22 +6,28 @@ export class UserService {
     this.logger.info(`-->User Service initialized in Secret Module`);
   }
 
-  async findUserByCognitoSub(cognitoSub) {
+  async findUserById(userId) {
     try {
-      this.logger.info(
-        `-->findUserByCognitoSub service invoked with cognitoSub:`,
-        cognitoSub
-      );
-      if (!cognitoSub) {
-        this.logger.warn("findUserByCognitoSub called without a cognitoSub.");
-        return { error: true, message: "No Cognito Sub" };
+      if (!userId) {
+        this.logger.warn("findUserById called without a userId.");
+        return { error: true, message: "UserId Required" };
       }
+      // Connect to the database
       await this.dbHandler.connectDb();
-      const user = await this.UserModel.findOne({ cognitoSub });
+
+      // Find the user and exclude the cognitoSub for security
+      const user = await this.userModel
+        .findById(userId)
+        .select("-cognitoSub -password");
+
+      if (!user) {
+        this.logger.info(`User not found with id: ${userId}`);
+        return { error: true, message: "User not found" };
+      }
       return user;
     } catch (error) {
-      this.logger.error("Error in findUserByCognitoSub service:", error);
-      return { error: true, message: "Error finding user" };
+      this.logger.error("Error getting user:", error);
+      return { error: true, message: "Error getting user" };
     }
   }
 }

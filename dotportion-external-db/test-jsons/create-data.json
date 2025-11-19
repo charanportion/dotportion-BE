@@ -1,11 +1,9 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
     }
   },
   "body": {
@@ -14,7 +12,7 @@
     "age": 21
   },
   "pathParameters": {
-    "secretId": "6885ca18508626b8ae35b763",
-    "collectionName": "users"
+    "secretId": "691a1a5d97bcb20a3c155932",
+    "collectionName": "players"
   }
 }

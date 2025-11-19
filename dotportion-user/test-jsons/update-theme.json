@@ -1,12 +1,10 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b"
-      }
+      "userId": "69183f08eaa1bc90c58b7798"
     }
   },
   "body": {
-    "theme": "dark"
+    "theme": "system"
   }
 }

@@ -1,7 +1,13 @@
 {
+  "requestContext": {
+    "authorizer": {
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    }
+  },
   "pathParameters": {
-    "tenant": "cognito",
-    "projectId": "68836caf709af61cf2013959",
+    "projectId": "6919d3f8d037ac99f94f89ca",
     "collection": "users"
   },
   "queryStringParameters": {
