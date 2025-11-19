@@ -274,4 +274,130 @@ export class WorkflowService {
       };
     }
   }
+
+  async getWorkflowDocs(workflowId, userId) {
+    try {
+      this.logger.info("--> getWrkflowDocs Service in invoked", workflowId);
+
+      if (!workflowId || !userId) {
+        return { error: true, message: "Missing parameters", statusCode: 400 };
+      }
+      await this.dbHandler.connectDb();
+      const workflow = await this.WorkflowModel.findOne({
+        _id: workflowId,
+      });
+
+      if (!workflow) {
+        return {
+          error: true,
+          message: "Workflow not found or access denied",
+          statusCode: 404,
+        };
+      }
+
+      if (!workflow.isDeployed) {
+        return {
+          error: true,
+          message: "Workflow not deployed. Deploy to view documentation.",
+          statusCode: 404,
+        };
+      }
+
+      // Extract parameters node
+      const paramNode = workflow.nodes.find((n) => n.type === "parameters");
+      const bodyParams = {};
+      const queryParams = {};
+
+      if (paramNode?.data?.sources) {
+        for (const src of paramNode.data.sources) {
+          if (src.from === "body")
+            Object.assign(bodyParams, src.parameters || {});
+          if (src.from === "query")
+            Object.assign(queryParams, src.parameters || {});
+        }
+      }
+
+      // Prepare example body
+      const exampleBody = {};
+      for (const key of Object.keys(bodyParams)) {
+        exampleBody[key] = bodyParams[key].type === "boolean" ? true : "string";
+      }
+
+      const baseUrl = process.env.BASE_URL;
+      const fullUrl = `${baseUrl}/api/${workflow.tenant}/${
+        workflow.project
+      }/${workflow.path.replace(/^\/+/, "")}`;
+
+      // Generate snippets
+      const bodyJson = JSON.stringify(exampleBody, null, 2);
+
+      const isGet = workflow.method === "GET";
+
+      const snippets = {
+        curl: isGet
+          ? `curl -X ${workflow.method} "${fullUrl}" -H "Content-Type: application/json"`
+          : `curl -X ${workflow.method} "${fullUrl}" \\
+        -H "Content-Type: application/json" \\
+        -d '${bodyJson}'`,
+
+        nodeFetch: isGet
+          ? `const response = await fetch("${fullUrl}"); 
+      const data = await response.json();
+      console.log(data);`
+          : `const response = await fetch("${fullUrl}", {
+        method: "${workflow.method}",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(${bodyJson})
+      });
+      const data = await response.json();
+      console.log(data);`,
+
+        nodeAxios: isGet
+          ? `import axios from "axios";
+      
+      const res = await axios.get("${fullUrl}");
+      console.log(res.data);`
+          : `import axios from "axios";
+      
+      const res = await axios({
+        method: "${workflow.method}",
+        url: "${fullUrl}",
+        data: ${bodyJson}
+      });
+      console.log(res.data);`,
+
+        python: isGet
+          ? `import requests
+      
+      response = requests.get("${fullUrl}")
+      print(response.json())`
+          : `import requests
+      
+      url = "${fullUrl}"
+      payload = ${bodyJson}
+      
+      response = requests.${workflow.method.toLowerCase()}(url, json=payload)
+      print(response.json())`,
+      };
+
+      return {
+        name: workflow.name,
+        endpoint: fullUrl,
+        method: workflow.method,
+        bodyParams,
+        queryParams,
+        headers: { "Content-Type": "application/json" },
+        snippets,
+        responseExample: '{ "success": true }',
+      };
+    } catch (error) {
+      this.logger.error("Error in the getWorkflowDocs service", error);
+      console.log(error.message);
+      return {
+        error: true,
+        message: "Error generating documentation",
+        statusCode: 500,
+      };
+    }
+  }
 }
