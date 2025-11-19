@@ -48,19 +48,19 @@ export class ProjectService {
         return { error: true, message: "No Owner Data" };
       }
       await this.dbHandler.connectDb();
-      const projects = await this.ProjectModel.find({ owner: userId })
-        .populate({
-          path: "workflows",
-          select: "name method path",
-        })
-        .populate({
-          path: "secrets",
-          select: "provider",
-        })
-        .populate({
-          path: "stats.topWorkflows.workflowId",
-          select: "name method path",
-        });
+      const projects = await this.ProjectModel.find({ owner: userId });
+      // .populate({
+      //   path: "workflows",
+      //   select: "name method path",
+      // })
+      // .populate({
+      //   path: "secrets",
+      //   select: "provider",
+      // })
+      // .populate({
+      //   path: "stats.topWorkflows.workflowId",
+      //   select: "name method path",
+      // });
       return projects;
     } catch (error) {
       this.logger.error(`Error in getProjectByOwner service: ${error.message}`);
