@@ -156,7 +156,10 @@ export class UserController {
         });
       }
 
-      return this.createResponse(201, { message: result });
+      return this.createResponse(201, {
+        message: "Theme updated successfully",
+        user: result.user,
+      });
     } catch (error) {
       this.logger.error("--> updateTheme controller failed", error);
       return this.createResponse(500, { message: "Internal server error" });

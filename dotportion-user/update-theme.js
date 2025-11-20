@@ -7,8 +7,8 @@ import UserModel from "/opt/nodejs/models/UserModel.js";
 // import UserModel from "../layers/common/nodejs/models/UserModel.js";
 // import logger from "../layers/common/nodejs/utils/logger.js";
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
-import { UserService } from "../dotportion-user/service/user-service.js";
-import { UserController } from "../dotportion-user/controller/user-controller.js";
+import { UserService } from "./service/user-service.js";
+import { UserController } from "./controller/user-controller.js";
 
 const { MONGO_URI, MDataBase } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
