@@ -148,7 +148,7 @@ export class UserService {
         return { error: true, message: "User not found" };
       }
 
-      return { error: false, message: "Theme updated successfully", user };
+      return { error: false, user };
     } catch (error) {
       this.logger.error("Error updating theme", error);
       return { error: true, message: "Internal server error" };
