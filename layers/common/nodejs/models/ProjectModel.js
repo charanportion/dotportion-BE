@@ -10,8 +10,7 @@ const projectSchema = new mongoose.Schema(
       type: String,
     },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     workflows: [

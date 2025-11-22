@@ -69,7 +69,7 @@ export class SecretController {
       );
 
       if (!project || project.error) {
-        this.logger.error("Project not found or access denied");
+        this.logger.error(project.message);
         return this.createResponse(404, {
           message: "Project not found or access denied.",
         });
@@ -111,8 +111,7 @@ export class SecretController {
       });
     } catch (error) {
       this.logger.error(
-        "Error in createSecret handler:",
-        JSON.stringify(error)
+        `Error in createSecret handler: ${JSON.stringify(error)}`
       );
       return this.createResponse(500, {
         message: "Internal server error.",

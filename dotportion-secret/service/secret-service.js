@@ -33,13 +33,9 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string IDs to ObjectIds
-      const projectObjectId = new mongoose.Types.ObjectId(projectId);
-      const userObjectId = new mongoose.Types.ObjectId(userId);
-
       // Check if secret with same provider already exists for this project
       const existingSecret = await this.SecretModel.findOne({
-        project: projectObjectId,
+        project: projectId,
         provider: secretData.provider,
       });
 
@@ -52,8 +48,8 @@ export class SecretService {
 
       const secret = await this.SecretModel.create({
         tenant,
-        owner: userObjectId,
-        project: projectObjectId,
+        owner: userId,
+        project: projectId,
         provider: secretData.provider,
         data: secretData.data,
       });
@@ -82,10 +78,7 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string ID to ObjectId
-      const projectObjectId = new mongoose.Types.ObjectId(projectId);
-
-      const secrets = await this.SecretModel.find({ project: projectObjectId });
+      const secrets = await this.SecretModel.find({ project: projectId });
       return secrets;
     } catch (error) {
       this.logger.error("Error in getProjectSecrets service:", error);
@@ -110,13 +103,9 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string IDs to ObjectIds
-      const secretObjectId = new mongoose.Types.ObjectId(secretId);
-      const userObjectId = new mongoose.Types.ObjectId(userId);
-
       const secret = await this.SecretModel.findOne({
-        _id: secretObjectId,
-        owner: userObjectId,
+        _id: secretId,
+        owner: userId,
       });
 
       if (!secret) {
@@ -150,11 +139,8 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string ID to ObjectId
-      const secretObjectId = new mongoose.Types.ObjectId(secretId);
-
       const secret = await this.SecretModel.findOneAndUpdate(
-        { _id: secretObjectId },
+        { _id: secretId, owner: userId },
         { $set: { data: updateData.data } },
         { new: true, runValidators: true }
       );
@@ -187,13 +173,9 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string IDs to ObjectIds
-      const secretObjectId = new mongoose.Types.ObjectId(secretId);
-      const userObjectId = new mongoose.Types.ObjectId(userId);
-
       const secret = await this.SecretModel.findOneAndDelete({
-        _id: secretObjectId,
-        owner: userObjectId,
+        _id: secretId,
+        owner: userId,
       });
 
       if (!secret) {
@@ -228,11 +210,8 @@ export class SecretService {
 
       await this.dbHandler.connectDb();
 
-      // Convert string ID to ObjectId
-      const projectObjectId = new mongoose.Types.ObjectId(projectId);
-
       const secret = await this.SecretModel.findOne({
-        project: projectObjectId,
+        project: projectId,
         provider,
         tenant,
       });
