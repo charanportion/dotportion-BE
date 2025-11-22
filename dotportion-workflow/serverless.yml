@@ -217,6 +217,12 @@ functions:
               - "http://localhost:3000"
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
             type: token
