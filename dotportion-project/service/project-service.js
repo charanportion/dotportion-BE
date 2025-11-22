@@ -40,8 +40,7 @@ export class ProjectService {
   async getProjectByOwner(userId) {
     try {
       this.logger.info(
-        `-->getProjectByOwner service invoked with cognitoSub:`,
-        userId
+        `-->getProjectByOwner service invoked with userId: ${userId}`
       );
       if (!userId) {
         this.logger.warn("getProjectByOwner called without a userId.");
@@ -61,6 +60,7 @@ export class ProjectService {
       //   path: "stats.topWorkflows.workflowId",
       //   select: "name method path",
       // });
+      this.logger.info(`fetched projects: ${projects}`);
       return projects;
     } catch (error) {
       this.logger.error(`Error in getProjectByOwner service: ${error.message}`);
@@ -75,9 +75,9 @@ export class ProjectService {
   async getProjectById(projectId, userId) {
     try {
       this.logger.info(
-        `-->getProjectById service invoked with projectId:`,
-        projectId
+        `-->getProjectById service invoked with projectId: ${projectId}`
       );
+
       if (!projectId) {
         this.logger.warn("getProjectById called without a projectId.");
         return { error: true, message: "No Project Id" };
@@ -109,8 +109,7 @@ export class ProjectService {
   async updateProject(projectId, userId, projectData) {
     try {
       this.logger.info(
-        `-->updateProject service invoked with projectId:`,
-        projectId
+        `-->updateProject service invoked with projectId: ${projectId}`
       );
       if (!projectId) {
         this.logger.warn("updateProject called without a projectId.");
@@ -140,8 +139,7 @@ export class ProjectService {
   async deleteProject(projectId, userId) {
     try {
       this.logger.info(
-        `-->deleteProject service invoked with projectId:`,
-        projectId
+        `-->deleteProject service invoked with projectId: ${projectId}`
       );
       if (!projectId) {
         this.logger.warn("deleteProject called without a projectId.");
@@ -172,8 +170,7 @@ export class ProjectService {
   ) {
     try {
       this.logger.info(
-        `-->getCallsOverTime service invoked with projectId:`,
-        projectId
+        `-->getCallsOverTime service invoked with projectId: ${projectId}`
       );
       if (!projectId) {
         this.logger.warn("getCallsOverTime called without a projectId.");

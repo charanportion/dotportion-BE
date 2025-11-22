@@ -191,11 +191,7 @@ export class AuthService {
         status: 200,
         message: "Login successful",
         token,
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-        },
+        user,
       };
     } catch (error) {
       this.logger.error("--> Login failed", error);

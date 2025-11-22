@@ -34,8 +34,8 @@ export class WorkflowService {
         project: projectId,
         owner: userId,
         tenant,
-        isPublic: workflowData.isPublic || false,
-        visibility: workflowData.visibility || "private",
+        isPublic: false,
+        visibility: "private",
       });
       return workflow;
     } catch (error) {
@@ -57,7 +57,6 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const workflows = await this.WorkflowModel.find({
         project: projectId,
-        visibility: "public",
       });
       return workflows;
     } catch (error) {
@@ -83,7 +82,7 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const workflow = await this.WorkflowModel.findOne({
         _id: workflowId,
-        $or: [{ owner: userId }, { visibility: "public" }],
+        $or: [{ owner: userId }],
       });
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
