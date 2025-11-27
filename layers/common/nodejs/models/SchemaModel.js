@@ -60,8 +60,7 @@ const SchemaSchema = new mongoose.Schema(
       enum: ["mongodb", "platform"],
     },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
     nodes: {

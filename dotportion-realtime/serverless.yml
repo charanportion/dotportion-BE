@@ -14,8 +14,7 @@ custom:
     createRoute53Record: false
     basePath: "realtime"
     endpointType: "regional"
-  cognito:
-    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
   isOffline: false
   serverless-offline:
     httpPort: 3002
@@ -52,6 +51,10 @@ provider:
         - "logs:CreateLogStream"
         - "logs:PutLogEvents"
       Resource: "arn:aws:logs:${aws:region}:${aws:accountId}:*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
 
 functions:
   # HTTP endpoint to start the workflow
@@ -81,7 +84,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   # WebSocket connection handlers
   connectionManager:

@@ -1,0 +1,17 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "6919c993f2ba6ecf577041a2",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    }
+  },
+  "body": {
+    "type": "issue",
+    "project": "DotPortion Web",
+    "service": "workflows",
+    "severity": "high",
+    "subject": "Save button not working on editor",
+    "message": "When I click Save, nothing happens and network shows 500. Steps: 1) open editor 2) make change 3) click Save"
+  }
+}

@@ -34,8 +34,8 @@ export class WorkflowService {
         project: projectId,
         owner: userId,
         tenant,
-        isPublic: workflowData.isPublic || false,
-        visibility: workflowData.visibility || "private",
+        isPublic: false,
+        visibility: "private",
       });
       return workflow;
     } catch (error) {
@@ -57,7 +57,6 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const workflows = await this.WorkflowModel.find({
         project: projectId,
-        visibility: "public",
       });
       return workflows;
     } catch (error) {
@@ -83,7 +82,7 @@ export class WorkflowService {
       await this.dbHandler.connectDb();
       const workflow = await this.WorkflowModel.findOne({
         _id: workflowId,
-        $or: [{ owner: userId }, { visibility: "public" }],
+        $or: [{ owner: userId }],
       });
       if (!workflow) {
         return { error: true, message: "Workflow not found or access denied" };
@@ -310,10 +309,22 @@ export class WorkflowService {
 
       if (paramNode?.data?.sources) {
         for (const src of paramNode.data.sources) {
-          if (src.from === "body")
-            Object.assign(bodyParams, src.parameters || {});
-          if (src.from === "query")
-            Object.assign(queryParams, src.parameters || {});
+          const params = src.parameters || {};
+
+          for (const [key, value] of Object.entries(params)) {
+            const paramObj = {
+              ...value, // type + required
+              from: src.from, // <<< add the source ("body" or "query")
+            };
+
+            if (src.from === "body") {
+              bodyParams[key] = paramObj;
+            }
+
+            if (src.from === "query") {
+              queryParams[key] = paramObj;
+            }
+          }
         }
       }
 
@@ -321,6 +332,10 @@ export class WorkflowService {
       const exampleBody = {};
       for (const key of Object.keys(bodyParams)) {
         exampleBody[key] = bodyParams[key].type === "boolean" ? true : "string";
+      }
+      for (const key of Object.keys(queryParams)) {
+        exampleBody[key] =
+          queryParams[key].type === "boolean" ? true : "string";
       }
 
       const baseUrl = process.env.BASE_URL;
@@ -382,6 +397,7 @@ export class WorkflowService {
 
       return {
         name: workflow.name,
+        description: workflow.description,
         endpoint: fullUrl,
         method: workflow.method,
         bodyParams,
