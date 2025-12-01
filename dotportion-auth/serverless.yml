@@ -162,6 +162,14 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
 
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
+
 plugins:
   - serverless-offline
   - serverless-prune-plugin

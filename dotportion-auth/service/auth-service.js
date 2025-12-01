@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-
 export class AuthService {
   constructor(dbHandler, logger, otpModel, userModel, emailService) {
     this.dbHandler = dbHandler;
@@ -50,16 +49,6 @@ export class AuthService {
         isVerified: false,
       });
 
-      const payload = {
-        userId: user._id,
-        email: user.email,
-        name: user.name,
-      };
-
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
-        expiresIn: "6h",
-      });
-
       await this.otpModel.updateMany(
         { email, context: "REGISTER", used: false },
         { used: true }
@@ -79,7 +68,6 @@ export class AuthService {
       return {
         status: 201,
         message: "User created successfully. Verify OTP to activate account.",
-        token,
         user: {
           id: user._id,
           email: user.email,
@@ -119,7 +107,22 @@ export class AuthService {
         user.isVerified = true;
         await user.save();
       }
-      return { status: 200, message: "OTP verified successfully" };
+
+      const payload = {
+        userId: user._id,
+        email: user.email,
+        name: user.name,
+      };
+
+      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+        expiresIn: "6h",
+      });
+      return {
+        status: 200,
+        message: "OTP verified successfully",
+        token,
+        user: user._id,
+      };
     } catch (error) {
       this.logger.error(
         "OTP verification failed:",
@@ -155,7 +158,11 @@ export class AuthService {
 
       await this.emailService.sendOtpEmail(email, otp);
 
-      return { status: 200, message: "OTP resent succesfully" };
+      return {
+        status: 200,
+        message: "OTP resent succesfully",
+        userId: user._id,
+      };
     } catch (error) {
       this.logger.error("--> OTP resending failed", error);
       return { status: 500, message: "Internal server error" };
@@ -166,8 +173,6 @@ export class AuthService {
     try {
       this.logger.info("--> login service invoked");
       await this.dbHandler.connectDb();
-
-      console.log(email);
 
       const user = await this.userModel.findOne({ email });
       if (!user) return { status: 400, message: "User not found" };
@@ -222,7 +227,11 @@ export class AuthService {
       });
 
       await this.emailService.sendOtpEmail(email, otp);
-      return { status: 200, message: "Password reset OTP sent successfully" };
+      return {
+        status: 200,
+        message: "Password reset OTP sent successfully",
+        user: { id: user._id },
+      };
     } catch (error) {
       this.logger.error("--> Forgot password service failed");
       return { status: 500, message: " Internal server error" };
@@ -255,7 +264,11 @@ export class AuthService {
       userOtp.used = true;
       await userOtp.save();
 
-      return { status: 200, message: "Password reset successfully" };
+      return {
+        status: 200,
+        message: "Password reset successfully",
+        user: { id: user._id },
+      };
     } catch (error) {
       this.logger.error("--> Reset password service failed");
       return { status: 500, message: " Internal server error" };
