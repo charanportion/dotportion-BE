@@ -331,7 +331,11 @@ export class AuthController {
 
       const { email, password } = body;
       const result = await this.authService.login(email, password);
-      if (result.status === 400 || result.status === 404) {
+      if (
+        result.status === 400 ||
+        result.status === 404 ||
+        result.staus === 403
+      ) {
         createLog({
           userId: result.user?.id || null,
           action: "login",

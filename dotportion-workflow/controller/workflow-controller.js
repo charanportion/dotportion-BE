@@ -1,3 +1,5 @@
+// import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
+import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 export class WorkflowController {
   constructor(
     workflowService,
@@ -15,26 +17,56 @@ export class WorkflowController {
   }
 
   async createWorkflow(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
     try {
       this.logger.info(
         "--> createWorkflow controller invoked with event:",
         event
       );
-      const userId = event.requestContext.authorizer.userId;
+
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
+
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
@@ -46,6 +78,20 @@ export class WorkflowController {
         this.logger.error(
           "Validation failed: Missing projectId in request Path Parameters."
         );
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 400,
+              message: "ProjectId is missing in request Path Parameters.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, {
           error: "ProjectId is missing in request Path Parameters.",
         });
@@ -58,6 +104,20 @@ export class WorkflowController {
       );
       if (!project || project.error) {
         this.logger.error("Project not found or access denied");
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "warn",
+          metadata: {
+            request: { body, projectId },
+            response: {
+              status: 404,
+              message: "Project not found or access denied.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(404, {
           message: "Project not found or access denied.",
         });
@@ -69,6 +129,20 @@ export class WorkflowController {
         this.logger.error(
           "tenant not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "warn",
+          metadata: {
+            request: { body, projectId },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
@@ -84,6 +158,17 @@ export class WorkflowController {
 
       if (workflow.error) {
         this.logger.error("Error creating workflow:", workflow.message);
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "error",
+          metadata: {
+            request: { body, projectId },
+            response: { status: 500, error: workflow.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: workflow.message });
       }
 
@@ -98,6 +183,17 @@ export class WorkflowController {
           "Error adding workflow to project:",
           updatedProject.message
         );
+        createLog({
+          userId: userId || null,
+          action: "create workflow",
+          type: "error",
+          metadata: {
+            request: { body, projectId },
+            response: { status: 500, error: updatedProject.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: updatedProject.message });
       }
 
@@ -105,6 +201,21 @@ export class WorkflowController {
         "Workflow created and added to project successfully:",
         workflow
       );
+      createLog({
+        userId: userId || null,
+        action: "create workflow",
+        type: "info",
+        metadata: {
+          request: body,
+          response: {
+            statusCode: 200,
+            message: "Workflow created and added to project successfully.",
+            data: workflow,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(201, {
         message: "Workflow created and added to project successfully.",
         data: workflow,
@@ -114,6 +225,19 @@ export class WorkflowController {
         "Error in createWorkflow handler:",
         JSON.stringify(error)
       );
+
+      createLog({
+        userId: userId,
+        action: "create workflow",
+        type: "error",
+        metadata: {
+          request: body,
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
+
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -228,42 +352,80 @@ export class WorkflowController {
   }
 
   async updateWorkflow(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
+    const { workflowId } = event.pathParameters;
     try {
       this.logger.info(
         "--> updateWorkflow controller invoked with event:",
         event
       );
-      const userId = event.requestContext.authorizer.userId;
+
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "update workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-      const { workflowId } = event.pathParameters;
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
+
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "update workflow",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
+        createLog({
+          userId: userId || null,
+          action: "update workflow",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 400,
+              message: "WorkflowId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "WorkflowId is missing." });
       }
 
-      if (!body) {
-        this.logger.error("Validation failed: Missing request body.");
-        return this.createResponse(400, { error: "Request body is missing." });
-      }
-
-      this.logger.info(`Received request body: ${JSON.stringify(body)}`);
       // const workflowData = JSON.parse(body);
 
       const result = await this.workflowService.updateWorkflow(
@@ -273,16 +435,56 @@ export class WorkflowController {
       );
       if (result.error) {
         this.logger.error("Error updating workflow:", result.message);
+        createLog({
+          userId: userId || null,
+          action: "update workflow",
+          type: "error",
+          metadata: {
+            request: { body, workflowId },
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
 
       if (!result) {
+        createLog({
+          userId: userId || null,
+          action: "update workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 404,
+              message: "workflow not found or access denied.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(404, {
           message: "Workflow not found or access denied.",
         });
       }
 
       this.logger.info("Workflow updated successfully:", result);
+      createLog({
+        userId: userId || null,
+        action: "update workflow",
+        type: "info",
+        metadata: {
+          request: { body, workflowId },
+          response: {
+            statusCode: 200,
+            message: "Workflow updated successfully.",
+            data: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(200, {
         message: "Workflow updated successfully.",
         data: result,
@@ -292,6 +494,17 @@ export class WorkflowController {
         "Error in updateWorkflow handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId,
+        action: "update workflow",
+        type: "error",
+        metadata: {
+          request: { body, workflowId },
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -299,34 +512,77 @@ export class WorkflowController {
   }
 
   async deleteWorkflow(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { workflowId } = event.pathParameters;
+
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
     try {
       this.logger.info(
         "--> deleteWorkflow controller invoked with event:",
         event
       );
-      const userId = event.requestContext.authorizer.userId;
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-      const { workflowId } = event.pathParameters;
 
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 400,
+              message: "WorkflowId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "WorkflowId is missing." });
       }
 
@@ -337,10 +593,35 @@ export class WorkflowController {
       );
       if (workflow.error) {
         this.logger.error("Error getting workflow:", workflow.message);
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "error",
+          metadata: {
+            request: { body, workflowId },
+            response: { status: 500, error: workflow.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: workflow.message });
       }
 
       if (!workflow) {
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 404,
+              message: "workflow not found or access denied.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(404, {
           message: "Workflow not found or access denied.",
         });
@@ -353,6 +634,17 @@ export class WorkflowController {
       );
       if (result.error) {
         this.logger.error("Error deleting workflow:", result.message);
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "error",
+          metadata: {
+            request: { body, workflowId },
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
 
@@ -368,11 +660,37 @@ export class WorkflowController {
           "Error removing workflow from project:",
           updatedProject.message
         );
+        createLog({
+          userId: userId || null,
+          action: "delete workflow",
+          type: "error",
+          metadata: {
+            request: { body, projectId },
+            response: { status: 500, error: updatedProject.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         // Don't fail the request if removing from project fails, just log it
         this.logger.warn("Workflow deleted but failed to remove from project");
       }
 
       this.logger.info("Workflow deleted successfully:", result);
+      createLog({
+        userId: userId,
+        action: "delete workflow",
+        type: "info",
+        metadata: {
+          request: { body, workflow },
+          response: {
+            statusCode: 200,
+            message: "Workflow deleted successfully.",
+            data: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(200, {
         message: "Workflow deleted successfully.",
         data: {
@@ -385,6 +703,17 @@ export class WorkflowController {
         "Error in deleteWorkflow handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId,
+        action: "delete workflow",
+        type: "error",
+        metadata: {
+          request: { body, workflowId },
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -392,24 +721,53 @@ export class WorkflowController {
   }
 
   async toggleWorkflowDeployment(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { workflowId } = event.pathParameters;
+
     try {
       this.logger.info(
         "--> toggleWorkflowDeployment controller invoked with event:",
         event
       );
-      const userId = event.requestContext.authorizer.userId;
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "toggle workflow deployment",
+          type: "warn",
+          metadata: {
+            request: workflowId,
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-      const { workflowId } = event.pathParameters;
 
       if (!workflowId) {
         this.logger.error("Validation failed: Missing workflowId.");
+        createLog({
+          userId: userId || null,
+          action: "toggle workflow deployment",
+          type: "warn",
+          metadata: {
+            request: "Body not defined",
+            response: {
+              status: 400,
+              message: "WorkflowId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "WorkflowId is missing." });
       }
 
@@ -422,11 +780,37 @@ export class WorkflowController {
           "Error toggling workflow deployment:",
           result.message
         );
+        createLog({
+          userId: userId || null,
+          action: "toggle workflow deployment",
+          type: "error",
+          metadata: {
+            request: workflowId,
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
 
       const action = result.deploymentAction;
       this.logger.info(`Workflow ${action} successfully:`, result);
+      createLog({
+        userId: userId,
+        action: "toggle workflow deployment",
+        type: "info",
+        metadata: {
+          request: workflowId,
+          response: {
+            statusCode: 200,
+            message: `Workflow ${action} successfully.`,
+            data: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(200, {
         message: `Workflow ${action} successfully.`,
         data: result,
@@ -436,6 +820,17 @@ export class WorkflowController {
         "Error in toggleWorkflowDeployment handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId,
+        action: "toggle workflow deployment",
+        type: "error",
+        metadata: {
+          request: workflowId,
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -443,43 +838,81 @@ export class WorkflowController {
   }
 
   async forkWorkflow(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { workflowId } = event.pathParameters;
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
+    const { projectId } = body;
+
     try {
       this.logger.info(
         "--> forkWorkflow controller invoked with event:",
         event
       );
 
-      const userId = event.requestContext.authorizer.userId;
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
-      const { workflowId } = event.pathParameters;
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
+
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
       if (!workflowId) {
         this.logger.error("Missing workflowId in path parameters.");
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "warn",
+          metadata: {
+            request: { body },
+            response: {
+              status: 400,
+              message: "WorkflowId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "WorkflowId is missing." });
       }
-
-      if (!body) {
-        this.logger.error("Missing request body.");
-        return this.createResponse(400, { error: "Request body is missing." });
-      }
-
-      const { projectId } = body;
 
       // Verify target project exists and belongs to user
       const project = await this.projectService.getProjectById(
@@ -488,6 +921,20 @@ export class WorkflowController {
       );
       if (!project || project.error) {
         this.logger.error("Project not found or access denied.");
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "warn",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: 404,
+              message: "Project not found or access denied.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(404, {
           message: "Project not found or access denied.",
         });
@@ -502,6 +949,20 @@ export class WorkflowController {
 
       if (forked.error) {
         this.logger.error("Error in forkWorkflow service:", forked.message);
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "error",
+          metadata: {
+            request: { body, workflowId },
+            response: {
+              status: forked.statusCode || 500,
+              error: forked.message,
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(forked.statusCode || 500, {
           message: forked.message,
         });
@@ -515,9 +976,38 @@ export class WorkflowController {
 
       if (updatedProject.error) {
         this.logger.warn("Workflow forked but failed to add to project.");
+        createLog({
+          userId: userId || null,
+          action: "fork workflow",
+          type: "error",
+          metadata: {
+            request: { body, projectId },
+            response: { status: 500, error: updatedProject.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
+        return this.createResponse(500, { message: updatedProject.message });
       }
 
       this.logger.info("Workflow forked successfully:", forked);
+      createLog({
+        userId: userId,
+        action: "fork workflow",
+        type: "info",
+        metadata: {
+          request: { body, workflowId, projectId },
+          response: {
+            statusCode: 200,
+            message: "Workflow forked successfully.",
+            project: updatedProject,
+            forked_workflow: forked,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
+
       return this.createResponse(200, {
         success: true,
         message: "Workflow forked successfully.",
@@ -528,6 +1018,17 @@ export class WorkflowController {
         "Error in forkWorkflow handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId,
+        action: "fork workflow",
+        type: "error",
+        metadata: {
+          request: { body, workflowId, projectId },
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
