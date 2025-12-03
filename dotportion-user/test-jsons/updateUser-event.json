@@ -1,11 +1,7 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "692eeee4ee6c704412cbfbf4"
     }
   },
   "body": {
@@ -14,8 +10,8 @@
       "experience_level": "Intrermediate",
       "subscription_tutorials": true,
       "subscription_newsletter": true,
-      "name": "charan",
-      "contact_number": "7799737788"
+      "name": "Rushyanjan Karthik",
+      "contact_number": "7569442152"
     }
   }
 }

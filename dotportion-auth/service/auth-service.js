@@ -45,9 +45,13 @@ export class AuthService {
         name,
         full_name,
         password: passwordHash,
+        authProvider: "email",
         isNewUser: true,
         isVerified: false,
       });
+
+      const userObj = user.toObject();
+      delete userObj.password;
 
       await this.otpModel.updateMany(
         { email, context: "REGISTER", used: false },
@@ -68,11 +72,7 @@ export class AuthService {
       return {
         status: 201,
         message: "User created successfully. Verify OTP to activate account.",
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-        },
+        user: userObj,
       };
     } catch (error) {
       this.logger.error("Error signing up:", error);
@@ -108,6 +108,9 @@ export class AuthService {
         await user.save();
       }
 
+      const userObj = user.toObject();
+      delete userObj.password;
+
       const payload = {
         userId: user._id,
         email: user.email,
@@ -121,7 +124,7 @@ export class AuthService {
         status: 200,
         message: "OTP verified successfully",
         token,
-        user: user._id,
+        user: userObj,
       };
     } catch (error) {
       this.logger.error(

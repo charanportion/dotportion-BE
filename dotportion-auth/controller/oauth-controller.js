@@ -1,0 +1,126 @@
+// import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
+import { createLog } from "../opt/nodejs/utils/activityLogger.js";
+
+export class OAuthController {
+  constructor(oauthService, logger, createResponse) {
+    this.oauthService = oauthService;
+    this.logger = logger;
+    this.createResponse = createResponse;
+  }
+
+  async googleLogin(event) {
+    try {
+      createLog({
+        action: "google-login-init",
+        type: "info",
+        metadata: {
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
+      const url = this.oauthService.getGoogleAuthURL();
+      return this.createResponse(302, null, {
+        Location: url,
+      });
+    } catch (err) {
+      this.logger.error("Google Login URL error", err);
+      createLog({
+        action: "google-login-error",
+        type: "error",
+        metadata: { error: err.message },
+      });
+      return this.createResponse(500, { error: "Internal Server Error" });
+    }
+  }
+
+  async googleCallback(event) {
+    try {
+      const code = event.queryStringParameters?.code;
+
+      const FRONTEND_URL = "http://localhost:3000";
+      createLog({
+        action: "google-callback-received",
+        type: "info",
+        metadata: { request: code },
+      });
+
+      const result = await this.oauthService.handleGoogleCallback(code);
+
+      createLog({
+        userId: result.user?._id,
+        action: "google-callback-success",
+        type: "info",
+        metadata: { response: result.isNewUser },
+      });
+
+      return this.createResponse(302, null, {
+        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}`,
+      });
+    } catch (err) {
+      this.logger.error("Google OAuth callback error", err);
+      createLog({
+        action: "google-callback-error",
+        type: "error",
+        metadata: { err: err.message },
+      });
+      return this.createResponse(500, { error: "OAuth callback failed" });
+    }
+  }
+
+  async githubLogin(event) {
+    try {
+      createLog({
+        action: "github-login-init",
+        type: "info",
+        metadata: {
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
+      return this.createResponse(302, null, {
+        Location: this.oauthService.getGitHubAuthURL(),
+      });
+    } catch (err) {
+      this.logger.error("GitHub Login error", err);
+      createLog({
+        action: "github-login-error",
+        type: "error",
+        metadata: { error: err.message },
+      });
+      return this.createResponse(500, { error: "Internal Server Error" });
+    }
+  }
+
+  async githubCallback(event) {
+    try {
+      const code = event.queryStringParameters?.code;
+
+      const FRONTEND_URL = "http://localhost:3000";
+      createLog({
+        action: "github-callback-received",
+        type: "info",
+        metadata: { request: code },
+      });
+      const result = await this.oauthService.handleGitHubCallback(code);
+
+      createLog({
+        userId: result.user?._id,
+        action: "github-callback-success",
+        type: "info",
+        metadata: { response: result.isNewUser },
+      });
+
+      return this.createResponse(302, null, {
+        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}`,
+      });
+    } catch (err) {
+      this.logger.error("GitHub OAuth callback error", err);
+      createLog({
+        action: "github-callback-error",
+        type: "error",
+        metadata: { err: err.message },
+      });
+      return this.createResponse(500, { error: "OAuth callback failed" });
+    }
+  }
+}

@@ -162,13 +162,45 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
+  googleLogin:
+    handler: google-login.handler
+    timeout: 30
+    events:
+      - http:
+          path: /oauth/google/login
+          method: GET
+
+  googleCallback:
+    handler: google-callback.handler
+    timeout: 30
+    events:
+      - http:
+          path: /oauth/google/callback
+          method: GET
+
+  githubLogin:
+    handler: github-login.handler
+    timeout: 30
+    events:
+      - http:
+          path: /oauth/github/login
+          method: GET
+
+  githubCallback:
+    handler: github-callback.handler
+    timeout: 30
+    events:
+      - http:
+          path: /oauth/github/callback
+          method: GET
+
+# layers:
+#   common:
+#     path: ../layers/common
+#     name: dotportion-common-layer-${self:provider.stage}
+#     description: Common utilities, models, and dependencies
+#     compatibleRuntimes:
+#       - nodejs18.x
 
 plugins:
   - serverless-offline

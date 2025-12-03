@@ -112,7 +112,7 @@ export class AuthController {
       );
       if (result.status === 400 || result.status === 404) {
         createLog({
-          userId: result.user?.id || null,
+          userId: result.user?._id || null,
           action: "sign-up",
           type: "warn",
           metadata: {
@@ -124,12 +124,16 @@ export class AuthController {
         });
       } else {
         createLog({
-          userId: result.user?.id || null,
+          userId: result.user?._id || null,
           action: "sign-up",
           type: "info",
           metadata: {
             request: body,
-            response: result,
+            response: {
+              status: result.status,
+              message: result.message,
+              result,
+            },
             ip: event?.requestContext?.identity?.sourceIp || "unknown",
             userAgent: event?.headers?.["User-Agent"] || "unknown",
           },
@@ -137,7 +141,8 @@ export class AuthController {
       }
 
       return this.createResponse(result.status, {
-        message: result,
+        message: result.message,
+        result,
       });
     } catch (error) {
       this.logger.error("--> Signup controller failed", error);
@@ -186,7 +191,7 @@ export class AuthController {
       if (result.status === 400 || result.status === 404) {
         createLog({
           userId: result.user?.id || null,
-          action: "verify-otp",
+          action: "verify otp",
           type: "warn",
           metadata: {
             request: body,
@@ -197,8 +202,8 @@ export class AuthController {
         });
       } else {
         createLog({
-          userId: result.user || null,
-          action: "verify-otp",
+          userId: result.user?.id || null,
+          action: "verify otp",
           type: "info",
           metadata: {
             request: body,
@@ -206,6 +211,7 @@ export class AuthController {
               status: result.status,
               message: result.message,
               token: result.token,
+              user: result.user,
             },
             ip: event?.requestContext?.identity?.sourceIp || "unknown",
             userAgent: event?.headers?.["User-Agent"] || "unknown",
@@ -215,12 +221,13 @@ export class AuthController {
       return this.createResponse(result.status, {
         message: result.message,
         token: result.token,
+        user: result.user,
       });
     } catch (error) {
       this.logger.error("--> verifyOtp controller failed", error);
       createLog({
         userId: null,
-        action: "verify-otp",
+        action: "verify otp",
         type: "error",
         metadata: {
           request: body,

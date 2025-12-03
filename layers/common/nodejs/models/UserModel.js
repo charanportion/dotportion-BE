@@ -35,6 +35,17 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    authProvider: {
+      type: String,
+      required: true,
+      enum: ["email", "google", "github"],
+      default: "email",
+    },
+    picture: {
+      type: String,
+      required: false,
+      default: "",
+    },
     isVerified: {
       type: Boolean,
       default: false,
