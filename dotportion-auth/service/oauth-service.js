@@ -4,6 +4,17 @@ import crypto from "crypto";
 // import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 
+const BASE_URL = "https://api-dev.dotportion.com";
+
+//GOOGLE
+const GOOGLE_CLIENT_ID =
+  "1015959772301-m380trckisgj899dl578g2j7qiuuo3v4.apps.googleusercontent.com";
+const GOOGLE_CLIENT_SECRET = "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";
+
+//GITHUB
+const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
+const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
+
 export class OAuthService {
   constructor(dbHandler, userModel, logger) {
     this.dbHandler = dbHandler;
@@ -12,16 +23,10 @@ export class OAuthService {
   }
 
   getGoogleAuthURL() {
-    const BASE_URL = "https://api-dev.dotportion.com";
-    const GOOGLE_CLIENT_ID =
-      "http://1015959772301-m380trckisgj899dl578g2j7qiuuo3v4.apps.googleusercontent.com";
-    const GOOGLE_CLIENT_SECRET = "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";
-
     const root = "https://accounts.google.com/o/oauth2/v2/auth";
 
     const query = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
       redirect_uri: `${BASE_URL}/auth/oauth/google/callback`,
       response_type: "code",
       scope: "openid email profile",
@@ -38,7 +43,7 @@ export class OAuthService {
       createLog({
         action: "google-oauth-callback",
         type: "info",
-        metadata: { code },
+        metadata: { reuest: code },
       });
 
       // 1. Exchange code for access token + id token
@@ -46,9 +51,9 @@ export class OAuthService {
         "https://oauth2.googleapis.com/token",
         new URLSearchParams({
           code,
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: `${process.env.BASE_URL}/auth/oauth/google/callback`,
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          redirect_uri: `${BASE_URL}/auth/oauth/google/callback`,
           grant_type: "authorization_code",
         })
       );
@@ -82,20 +87,16 @@ export class OAuthService {
       createLog({
         action: "google-oauth-error",
         type: "error",
-        metadata: { error: err.message, stack: err.stack },
+        metadata: { error: error.message, stack: error.stack },
       });
-      throw err;
+      throw error;
     }
   }
 
   getGitHubAuthURL() {
-    const BASE_URL = "https://api-dev.dotportion.com";
     const root = "https://github.com/login/oauth/authorize";
-    const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
-    const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
     const query = new URLSearchParams({
       client_id: GITHUB_CLIENT_ID,
-      client_secret: GITHUB_CLIENT_SECRET,
       redirect_uri: `${BASE_URL}/auth/oauth/github/callback`,
       scope: "user:email",
     });
@@ -110,14 +111,14 @@ export class OAuthService {
       createLog({
         action: "github-oauth-callback",
         type: "info",
-        metadata: { code },
+        metadata: { request: code },
       });
 
       const tokenRes = await axios.post(
         "https://github.com/login/oauth/access_token",
         {
-          client_id: process.env.GITHUB_CLIENT_ID,
-          client_secret: process.env.GITHUB_CLIENT_SECRET,
+          client_id: GITHUB_CLIENT_ID,
+          client_secret: GITHUB_CLIENT_SECRET,
           code,
         },
         { headers: { Accept: "application/json" } }
@@ -150,7 +151,10 @@ export class OAuthService {
         userId: result.user?._id,
         action: "github-login",
         type: "info",
-        metadata: { email, fullName, picture, isNewUser: result.isNewUser },
+        metadata: {
+          resuest: { email, fullName },
+          response: { email, fullName, picture, isNewUser: result.isNewUser },
+        },
       });
 
       return result;
@@ -158,9 +162,9 @@ export class OAuthService {
       createLog({
         action: "github-oauth-error",
         type: "error",
-        metadata: { error: err.message, stack: err.stack },
+        metadata: { error: error.message, stack: error.stack },
       });
-      throw err;
+      throw error;
     }
   }
 
@@ -216,5 +220,35 @@ export class OAuthService {
     });
 
     return { user, token, isNewUser };
+  }
+
+  async saveUsernameAndRefreshToken(userId, username) {
+    try {
+      this.logger.info("--> saveUserNameAndRefreshToken insitiaized --");
+      await this.dbHandler.connectDb();
+
+      const user = await this.userModel.findById(userId);
+      if (!user) throw new Error("User not found");
+
+      // Update username
+      user.name = username;
+      await user.save();
+
+      // Create updated JWT token (new payload)
+      const payload = {
+        userId: user._id,
+        email: user.email,
+        name: user.name,
+      };
+
+      const newToken = jwt.sign(payload, "my_secret_key_for_dotportion", {
+        expiresIn: "6h",
+      });
+
+      return { user, token: newToken };
+    } catch (err) {
+      this.logger.error("-->Set username Service error", err);
+      return { status: 500, message: "Internal server error" };
+    }
   }
 }

@@ -1,0 +1,8 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "6931878754d1951c90ab4787"
+    }
+  },
+  "body": { "username": "Rushyanjan25" }
+}

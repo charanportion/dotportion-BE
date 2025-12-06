@@ -13,6 +13,7 @@ custom:
     createRoute53Record: false
     basePath: "auth"
     endpointType: "regional"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
 
 provider:
   name: aws
@@ -25,6 +26,10 @@ provider:
       Action:
         - "ssm:GetParameter"
       Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
 
   # Environment variables will be available to all your functions
   # It's highly recommended to use a service like AWS Secrets Manager for production
@@ -193,6 +198,36 @@ functions:
       - http:
           path: /oauth/github/callback
           method: GET
+
+  setUserName:
+    handler: set-username.handler
+    timeout: 30
+    events:
+      - http:
+          path: /oauth/username
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+            headers: # Optional: specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          request:
+            parameters:
+              headers:
+                Authorization: true # 🔥 MUST HAVE
+          authorizer:
+            name: authorizer # 🔥 MUST MATCH THE FUNCTION NAME ABOVE
+            arn: ${self:custom.authorizerArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0 # disable caching during debugging
 
 # layers:
 #   common:
