@@ -222,33 +222,38 @@ export class OAuthService {
     return { user, token, isNewUser };
   }
 
-  async saveUsernameAndRefreshToken(userId, username) {
+  async saveUsernameAndRefreshTokenByEmail(email, username) {
     try {
-      this.logger.info("--> saveUserNameAndRefreshToken insitiaized --");
+      this.logger.info(
+        "--> saveUsernameAndRefreshTokenByEmail service initialised"
+      );
       await this.dbHandler.connectDb();
 
-      const user = await this.userModel.findById(userId);
-      if (!user) throw new Error("User not found");
+      const user = await this.userModel.findOne({ email });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
 
       // Update username
       user.name = username;
+      user.isNewUser = false;
       await user.save();
 
-      // Create updated JWT token (new payload)
       const payload = {
         userId: user._id,
         email: user.email,
         name: user.name,
       };
 
-      const newToken = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
         expiresIn: "6h",
       });
 
-      return { user, token: newToken };
+      return { user, token };
     } catch (err) {
-      this.logger.error("-->Set username Service error", err);
-      return { status: 500, message: "Internal server error" };
+      this.logger.error("saveUsernameAndRefreshTokenByEmail error", err);
+      throw err;
     }
   }
 }

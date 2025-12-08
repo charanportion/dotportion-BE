@@ -62,7 +62,7 @@ export class OAuthController {
       });
 
       return this.createResponse(302, null, {
-        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}`,
+        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
       });
     } catch (err) {
       this.logger.error("Google OAuth callback error", err);
@@ -123,7 +123,7 @@ export class OAuthController {
       });
 
       return this.createResponse(302, null, {
-        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}`,
+        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
       });
     } catch (err) {
       this.logger.error("GitHub OAuth callback error", err);
@@ -139,87 +139,34 @@ export class OAuthController {
   async setUsername(event) {
     const body =
       typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
     try {
-      this.logger.info("---Set username controller invoked---");
+      this.logger.info("--- Set Username Controller Invoked (EMAIL BASED) ---");
 
-      const { username } = body;
+      const { email, username } = body;
 
-      if (!username) {
-        createLog({
-          userId: null,
-          action: "set-username",
-          type: "warn",
-          metadata: {
-            request: body,
-            response: {
-              message: "Name is required.",
-            },
-            ip: event?.requestContext?.identity?.sourceIp || "unknown",
-            userAgent: event?.headers?.["User-Agent"] || "unknown",
-          },
+      if (!email || !username) {
+        return this.createResponse(400, {
+          error: "Email and username are required",
         });
-        return this.createResponse(400, { error: "Username is required" });
       }
 
-      // Get JWT token from Authorization header
-      const auth = event.headers.Authorization || event.headers.authorization;
-      if (!auth) {
-        createLog({
-          userId: null,
-          action: "set-username",
-          type: "warn",
-          metadata: {
-            request: body,
-            response: {
-              message: "JWT Token is required.",
-            },
-            ip: event?.requestContext?.identity?.sourceIp || "unknown",
-            userAgent: event?.headers?.["User-Agent"] || "unknown",
-          },
-        });
-        return this.createResponse(401, { error: "No token provided" });
-      }
-
-      const token = auth.replace("Bearer ", "");
-
-      const decoded = jwt.verify(token, "my_secret_key_for_dotportion");
-
-      const result = await this.oauthService.saveUsernameAndRefreshToken(
-        decoded.userId,
+      const result = await this.oauthService.saveUsernameAndRefreshTokenByEmail(
+        email,
         username
       );
 
-      createLog({
-        userId: result.user?._id || null,
-        action: "set-username",
-        type: "info",
-        metadata: {
-          request: body,
-          response: {
-            result,
-          },
-          ip: event?.requestContext?.identity?.sourceIp || "unknown",
-          userAgent: event?.headers?.["User-Agent"] || "unknown",
-        },
-      });
+      if (!result || !result.user) {
+        return this.createResponse(404, { error: "User not found" });
+      }
 
       return this.createResponse(200, {
         success: true,
         user: result.user,
-        token: result.token, // return fresh token
+        token: result.token,
       });
     } catch (err) {
-      createLog({
-        userId: null,
-        action: "set-username",
-        type: "error",
-        metadata: {
-          request: body,
-          response: { error: err.message },
-          ip: event?.requestContext?.identity?.sourceIp || "unknown",
-          userAgent: event?.headers?.["User-Agent"] || "unknown",
-        },
-      });
+      this.logger.error("Set Username Error (EMAIL BASED)", err);
       return this.createResponse(500, { error: "Failed to save username" });
     }
   }
