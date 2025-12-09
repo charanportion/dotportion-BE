@@ -1,0 +1,11 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "6919c993f2ba6ecf577041a2"
+    }
+  },
+  "body": {
+    "tourKey": "sidebarMain",
+    "completed": true
+  }
+}

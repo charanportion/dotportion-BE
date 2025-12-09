@@ -300,4 +300,67 @@ export class UserController {
       return this.createResponse(500, { message: "Internal server error" });
     }
   }
+
+  async getTours(event) {
+    try {
+      this.logger.info("--> getTours controller invoked");
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+      const result = await this.userService.findToursByUserId(userId);
+      if (result.error) {
+        return this.createResponse(404, { message: result.message });
+      }
+      return this.createResponse(200, {
+        tours: result.tours,
+        isNewUser: result.isNewUser,
+      });
+    } catch (error) {
+      this.logger.error("Error in getTours handler:", error);
+      return this.createResponse(500, { message: "Internal server error." });
+    }
+  }
+
+  async updateTour(event) {
+    try {
+      this.logger.info("--> updateTour controller invoked");
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
+        });
+      }
+      const body =
+        typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+      if (!body || !body.tourKey) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, {
+          message: "tourKey is required in the request body",
+        });
+      }
+      const { tourKey, completed = true } = body;
+      const result = await this.userService.updateUserTour(
+        userId,
+        tourKey,
+        completed
+      );
+      if (result.error) {
+        return this.createResponse(400, { message: result.message });
+      }
+      // optional: set isNewUser false if you want to mark onboarding done when certain tours done
+      return this.createResponse(200, {
+        message: "Tour updated",
+        tours: result.tours,
+      });
+    } catch (error) {
+      this.logger.error("Error in updateTour handler:", error);
+      return this.createResponse(500, { message: "Internal server error." });
+    }
+  }
 }
