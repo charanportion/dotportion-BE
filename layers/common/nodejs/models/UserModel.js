@@ -27,13 +27,24 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    authProvider: {
+      type: String,
+      required: true,
+      enum: ["email", "google", "github"],
+      default: "email",
+    },
+    picture: {
+      type: String,
+      required: false,
+      default: "",
     },
     isVerified: {
       type: Boolean,

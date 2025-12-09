@@ -1,10 +1,10 @@
 {
   "requestContext": {
     "authorizer": {
-      "userId": "69183f08eaa1bc90c58b7798"
+      "userId": "692a95f0e72cdbce31691ef3"
     }
   },
   "body": {
-    "theme": "system"
+    "theme": "light"
   }
 }

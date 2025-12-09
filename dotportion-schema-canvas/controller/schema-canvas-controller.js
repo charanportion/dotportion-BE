@@ -1,3 +1,6 @@
+// import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
+import { createLog } from "../opt/nodejs/utils/activityLogger.js";
+
 export class SchemaCanvasController {
   constructor(
     schemaCanvasService,
@@ -208,25 +211,71 @@ export class SchemaCanvasController {
   }
 
   async generateSchema(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { projectId, dataBase } = event.pathParameters;
     try {
       this.logger.info("-->generateSchema Controller Started");
-      const { projectId, dataBase } = event.pathParameters;
-      const userId = event.requestContext.authorizer.userId;
+
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "generate schema",
+          type: "warn",
+          metadata: {
+            request: {
+              database: dataBase,
+              projectId: projectId,
+            },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
       if (!projectId) {
+        createLog({
+          userId: userId || null,
+          action: "generate schema",
+          type: "warn",
+          metadata: {
+            request: event.pathParameters,
+            response: {
+              status: 400,
+              message: "ProjectId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, {
           error: "Project ID is required",
         });
       }
       if (!dataBase) {
+        createLog({
+          userId: userId || null,
+          action: "generate schema",
+          type: "warn",
+          metadata: {
+            request: projectId,
+            response: {
+              status: 400,
+              message: "Database is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, {
           error: "dataBase is required",
         });
@@ -242,6 +291,20 @@ export class SchemaCanvasController {
         );
 
         if (secret.error) {
+          createLog({
+            userId: userId || null,
+            action: "generate schema",
+            type: "error",
+            metadata: {
+              request: {
+                database: dataBase,
+                projectId: projectId,
+              },
+              response: { status: 400, error: secret.message },
+              ip: event?.requestContext?.identity?.sourceIp || "unknown",
+              userAgent: event?.headers?.["User-Agent"] || "unknown",
+            },
+          });
           return this.createResponse(400, { error: secret.message });
         }
       }
@@ -251,6 +314,23 @@ export class SchemaCanvasController {
         this.logger.error(
           "tenant not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "generate schema",
+          type: "warn",
+          metadata: {
+            request: {
+              database: dataBase,
+              projectId: projectId,
+            },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
@@ -267,8 +347,36 @@ export class SchemaCanvasController {
       );
 
       if (result.error) {
+        createLog({
+          userId: userId || null,
+          action: "generate schema",
+          type: "error",
+          metadata: {
+            request: {
+              database: dataBase,
+              projectId: projectId,
+            },
+            response: { status: 400, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: result.message });
       }
+      createLog({
+        userId: userId || null,
+        action: "generate schema",
+        type: "info",
+        metadata: {
+          request: {
+            database: dataBase,
+            projectId: projectId,
+          },
+          response: result,
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
 
       return this.createResponse(200, {
         message: "Schema Generated Successfully",
@@ -276,6 +384,20 @@ export class SchemaCanvasController {
       });
     } catch (error) {
       this.logger.error(`Error generating schema: ${error}`);
+      createLog({
+        userId: userId || null,
+        action: "generate schema",
+        type: "error",
+        metadata: {
+          request: {
+            database: dataBase,
+            projectId: projectId,
+          },
+          response: { status: 500, error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, { error: "Internal server error" });
     }
   }

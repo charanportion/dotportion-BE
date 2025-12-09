@@ -1,3 +1,5 @@
+// import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
+import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 export class ProjectController {
   constructor(projectService, logger, createResponse) {
     this.projectService = projectService;
@@ -7,6 +9,11 @@ export class ProjectController {
   }
 
   async createProject(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
     try {
       this.logger.info(
         "--> createProject controller invoked with event:",
@@ -14,24 +21,46 @@ export class ProjectController {
       );
 
       // const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const userId = event.requestContext.authorizer.userId;
 
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "create project",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
-
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "create project",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
 
@@ -41,10 +70,36 @@ export class ProjectController {
 
       if (result.error) {
         this.logger.error("Error creating project:", result.message);
+        createLog({
+          userId: userId || null,
+          action: "create project",
+          type: "error",
+          metadata: {
+            request: body,
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
 
       this.logger.info("Project created successfully:", result);
+      createLog({
+        userId: userId || null,
+        action: "create project",
+        type: "info",
+        metadata: {
+          request: body,
+          response: {
+            status: 201,
+            message: "Project created successfully.",
+            project: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
 
       return this.createResponse(201, {
         message: "Project created successfully.",
@@ -55,6 +110,17 @@ export class ProjectController {
         "Error in createProject handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId || null,
+        action: "create project",
+        type: "error",
+        metadata: {
+          request: body,
+          response: { status: 500, error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -139,6 +205,13 @@ export class ProjectController {
   }
 
   async updateProject(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { projectId } = event.pathParameters;
+    const body =
+      typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
+
     try {
       this.logger.info(
         "--> updateProject controller invoked with event:",
@@ -146,30 +219,65 @@ export class ProjectController {
       );
 
       // const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const userId = event.requestContext.authorizer.userId;
 
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "update project",
+          type: "warn",
+          metadata: {
+            request: { body, projectId },
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
-      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
+        createLog({
+          userId: userId || null,
+          action: "update project",
+          type: "warn",
+          metadata: {
+            request: body,
+            response: {
+              status: 400,
+              message: "ProjectId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
 
-      const body =
-        typeof event.body === "string"
-          ? JSON.parse(event.body)
-          : event.body || {};
-
       if (!body) {
         this.logger.error("Validation failed: Missing request body.");
+        createLog({
+          userId: userId || null,
+          action: "create project",
+          type: "warn",
+          metadata: {
+            request: "Body is not defined",
+            response: {
+              status: 400,
+              message: "Request body is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "Request body is missing." });
       }
 
@@ -182,9 +290,35 @@ export class ProjectController {
 
       if (result.error) {
         this.logger.error("Error updating project:", result.message);
+        createLog({
+          userId: userId || null,
+          action: "update project",
+          type: "error",
+          metadata: {
+            request: body,
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
       this.logger.info("Project updated successfully:", result);
+      createLog({
+        userId: userId || null,
+        action: "update project",
+        type: "info",
+        metadata: {
+          request: { body, projectId },
+          response: {
+            status: 200,
+            message: "Project updated successfully.",
+            project: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(200, {
         message: "Project updated successfully.",
         data: result,
@@ -193,6 +327,16 @@ export class ProjectController {
       this.logger.error(
         `Error in updateProject handler: ${JSON.stringify(error)}`
       );
+      createLog({
+        userId: userId || null,
+        action: "update project",
+        type: "error",
+        metadata: {
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });
@@ -200,6 +344,9 @@ export class ProjectController {
   }
 
   async deleteProject(event) {
+    const userId = event.requestContext.authorizer.userId;
+    const { projectId } = event.pathParameters;
+
     try {
       this.logger.info(
         "--> deleteProject controller invoked with event:",
@@ -207,20 +354,46 @@ export class ProjectController {
       );
 
       // const cognitoSub = event.requestContext.authorizer.claims.sub;
-      const userId = event.requestContext.authorizer.userId;
 
       if (!userId) {
         this.logger.error(
           "userId not found in the event. Check authorizer configuration."
         );
+        createLog({
+          userId: userId || null,
+          action: "delete project",
+          type: "warn",
+          metadata: {
+            request: projectId,
+            response: {
+              status: 403,
+              message: "Forbidden: User identifier not found.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(403, {
           message: "Forbidden: User identifier not found.",
         });
       }
 
-      const { projectId } = event.pathParameters;
       if (!projectId) {
         this.logger.error("Validation failed: Missing projectId.");
+        createLog({
+          userId: userId || null,
+          action: "delete project",
+          type: "warn",
+          metadata: {
+            request: "Delete project request",
+            response: {
+              status: 400,
+              message: "ProjectId is missing.",
+            },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(400, { error: "ProjectId is missing." });
       }
 
@@ -228,11 +401,37 @@ export class ProjectController {
 
       if (result.error) {
         this.logger.error("Error Deleting project:", result.message);
+        createLog({
+          userId: userId || null,
+          action: "delete project",
+          type: "error",
+          metadata: {
+            request: projectId,
+            response: { status: 500, error: result.message },
+            ip: event?.requestContext?.identity?.sourceIp || "unknown",
+            userAgent: event?.headers?.["User-Agent"] || "unknown",
+          },
+        });
         return this.createResponse(500, { message: result.message });
       }
 
       this.logger.info("Project Deleted successfully:", result);
 
+      createLog({
+        userId: userId || null,
+        action: "delete project",
+        type: "info",
+        metadata: {
+          request: projectId,
+          response: {
+            status: 200,
+            message: "Project deleted successfully.",
+            project: result,
+          },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(200, {
         message: "Project Deleted successfully.",
         data: result,
@@ -242,6 +441,16 @@ export class ProjectController {
         "Error in deleteProject handler:",
         JSON.stringify(error)
       );
+      createLog({
+        userId: userId || null,
+        action: "delete project",
+        type: "error",
+        metadata: {
+          response: { error: error.message },
+          ip: event?.requestContext?.identity?.sourceIp || "unknown",
+          userAgent: event?.headers?.["User-Agent"] || "unknown",
+        },
+      });
       return this.createResponse(500, {
         message: "Internal server error.",
       });

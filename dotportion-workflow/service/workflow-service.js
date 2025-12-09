@@ -408,7 +408,6 @@ export class WorkflowService {
       };
     } catch (error) {
       this.logger.error("Error in the getWorkflowDocs service", error);
-      console.log(error.message);
       return {
         error: true,
         message: "Error generating documentation",

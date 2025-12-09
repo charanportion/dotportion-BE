@@ -1,14 +1,14 @@
 {
   "requestContext": {
     "authorizer": {
-      "userId": "69183f08eaa1bc90c58b7798",
+      "userId": "6919c993f2ba6ecf577041a2",
       "email": "sricharanrayala24@gmail.com",
       "name": "charan"
     }
   },
   "body": {},
   "pathParameters": {
-    "projectId": "68836caf709af61cf2013959",
-    "dataBase": "platform"
+    "projectId": "691cbec76d4bc01ce317f2c5",
+    "dataBase": "mongodb"
   }
 }

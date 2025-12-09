@@ -1,12 +1,12 @@
 {
   "requestContext": {
     "authorizer": {
-      "userId": "69183f08eaa1bc90c58b7798",
-      "email": "sricharanrayala24@gmail.com",
-      "name": "charan"
+      "userId": "692a95f0e72cdbce31691ef3",
+      "email": "rushyanjan25@gmail.com",
+      "name": "shario_api"
     }
   },
   "pathParameters": {
-    "projectId": "6919cc4f76a17aacf4727a89"
+    "projectId": "692d7509f9c376ccadf552f4"
   }
 }
