@@ -154,4 +154,53 @@ export class UserService {
       return { error: true, message: "Internal server error" };
     }
   }
+
+  async findToursByUserId(userId) {
+    try {
+      if (!userId) {
+        this.logger.warn("findToursByUserId called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
+      await this.dbHandler.connectDb();
+      const user = await this.userModel
+        .findById(userId)
+        .select("tours isNewUser");
+      if (!user) return { error: true, message: "User not found" };
+      return {
+        error: false,
+        tours: user.tours || {},
+        isNewUser: user.isNewUser,
+      };
+    } catch (error) {
+      this.logger.error("Error finding tours:", error);
+      return { error: true, message: "Error finding tours" };
+    }
+  }
+
+  // Update a specific tour boolean: tourKey string, completed boolean
+  async updateUserTour(userId, tourKey, completed = true) {
+    try {
+      if (!userId) {
+        this.logger.warn("updateUserTour called without a userId.");
+        return { error: true, message: "UserId Required" };
+      }
+      if (!tourKey) {
+        this.logger.warn("updateUserTour called without a tourKey.");
+        return { error: true, message: "tourKey is required" };
+      }
+      await this.dbHandler.connectDb();
+
+      const update = { [`tours.${tourKey}`]: !!completed };
+      const updatedUser = await this.userModel
+        .findByIdAndUpdate(userId, { $set: update }, { new: true })
+        .select("-cognitoSub -password");
+
+      if (!updatedUser) return { error: true, message: "User not found" };
+
+      return { error: false, tours: updatedUser.tours };
+    } catch (error) {
+      this.logger.error("Error updating user tour:", error);
+      return { error: true, message: "Failed to update user tour" };
+    }
+  }
 }

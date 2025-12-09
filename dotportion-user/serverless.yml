@@ -139,6 +139,52 @@ functions:
             resultTtlInSeconds: 300 # Cache authorization for 5 minutes
             arn: ${self:custom.authorizerArn}
 
+  getTours:
+    handler: get-tours.handler
+    timeout: 10
+    events:
+      - http:
+          path: /tours
+          method: GET
+          cors:
+            origins:
+              - "http://localhost:3000"
+              - "https://www.dotportion.com/"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+          authorizer:
+            type: token
+            identitySource: method.request.header.Authorization
+            arn: ${self:custom.authorizerArn}
+  updateTour:
+    handler: update-tour.handler
+    timeout: 10
+    events:
+      - http:
+          path: /tours
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000"
+              - "https://www.dotportion.com/"
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: true
+          authorizer:
+            type: token
+            identitySource: method.request.header.Authorization
+            arn: ${self:custom.authorizerArn}
+
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
 plugins:
   - serverless-offline
   - serverless-prune-plugin

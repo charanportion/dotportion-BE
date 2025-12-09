@@ -68,6 +68,14 @@ const userSchema = new mongoose.Schema(
         default: "system",
       },
     },
+    tours: {
+      sidebarMain: { type: Boolean, default: false },
+      sidebarProject: { type: Boolean, default: false },
+      workflowsTour: { type: Boolean, default: false },
+      logsTour: { type: Boolean, default: false },
+      schemaPageTour: { type: Boolean, default: false },
+      projectTour: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,
