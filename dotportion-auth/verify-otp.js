@@ -13,7 +13,7 @@ import { AuthService } from "./service/auth-service.js";
 import { AuthController } from "./controller/auth-controller.js";
 // import { EmailService } from "./service/email-service.js";
 
-const { MONGO_URI, MDataBase } = process.env;
+const { MONGO_URI, MDataBase, JWT_SECRET } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
@@ -23,8 +23,10 @@ export const handler = async (event) => {
       dbHandler,
       logger,
       otpModel,
-      UserModel
+      UserModel,
       // EmailService
+      null,
+      JWT_SECRET
     );
     const authController = new AuthController(
       authService,

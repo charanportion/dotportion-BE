@@ -1,12 +1,20 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 export class AuthService {
-  constructor(dbHandler, logger, otpModel, userModel, emailService) {
+  constructor(
+    dbHandler,
+    logger,
+    otpModel,
+    userModel,
+    emailService,
+    JWT_SECRET
+  ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.otpModel = otpModel;
     this.userModel = userModel;
     this.emailService = emailService;
+    this.JWT_SECRET = JWT_SECRET;
     this.logger.info("--> AuthService initialized");
   }
 
@@ -117,7 +125,7 @@ export class AuthService {
         name: user.name,
       };
 
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
       return {
@@ -191,7 +199,7 @@ export class AuthService {
         name: user.name,
       };
 
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
 

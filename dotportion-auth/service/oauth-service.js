@@ -4,30 +4,44 @@ import crypto from "crypto";
 // import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 
-const BASE_URL = "https://api-dev.dotportion.com";
-
 //GOOGLE
-const GOOGLE_CLIENT_ID =
-  "1015959772301-m380trckisgj899dl578g2j7qiuuo3v4.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "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";
+// const GOOGLE_CLIENT_ID =
+//   "136283967428-se8j28502jd882cidpf2dneqli52qvfe.apps.googleusercontent.com";
+// const GOOGLE_CLIENT_SECRET = "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";
 
 //GITHUB
-const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
-const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
+// const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
+// const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
 
 export class OAuthService {
-  constructor(dbHandler, userModel, logger) {
+  constructor(
+    dbHandler,
+    userModel,
+    logger,
+    JWT_SECRET,
+    BASE_URL,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET
+  ) {
     this.dbHandler = dbHandler;
     this.userModel = userModel;
     this.logger = logger;
+    this.JWT_SECRET = JWT_SECRET;
+    this.BASE_URL = BASE_URL;
+    this.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
+    this.GOOGLE_CLIENT_SECRET = GOOGLE_CLIENT_SECRET;
+    this.GITHUB_CLIENT_ID = GITHUB_CLIENT_ID;
+    this.GITHUB_CLIENT_SECRET = GITHUB_CLIENT_SECRET;
   }
 
   getGoogleAuthURL() {
     const root = "https://accounts.google.com/o/oauth2/v2/auth";
 
     const query = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: `${BASE_URL}/auth/oauth/google/callback`,
+      client_id: this.GOOGLE_CLIENT_ID,
+      redirect_uri: `${this.BASE_URL}/auth/oauth/google/callback`,
       response_type: "code",
       scope: "openid email profile",
       access_type: "offline",
@@ -51,9 +65,9 @@ export class OAuthService {
         "https://oauth2.googleapis.com/token",
         new URLSearchParams({
           code,
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
-          redirect_uri: `${BASE_URL}/auth/oauth/google/callback`,
+          client_id: this.GOOGLE_CLIENT_ID,
+          client_secret: this.GOOGLE_CLIENT_SECRET,
+          redirect_uri: `${this.BASE_URL}/auth/oauth/google/callback`,
           grant_type: "authorization_code",
         })
       );
@@ -96,8 +110,8 @@ export class OAuthService {
   getGitHubAuthURL() {
     const root = "https://github.com/login/oauth/authorize";
     const query = new URLSearchParams({
-      client_id: GITHUB_CLIENT_ID,
-      redirect_uri: `${BASE_URL}/auth/oauth/github/callback`,
+      client_id: this.GITHUB_CLIENT_ID,
+      redirect_uri: `${this.BASE_URL}/auth/oauth/github/callback`,
       scope: "user:email",
     });
 
@@ -117,8 +131,8 @@ export class OAuthService {
       const tokenRes = await axios.post(
         "https://github.com/login/oauth/access_token",
         {
-          client_id: GITHUB_CLIENT_ID,
-          client_secret: GITHUB_CLIENT_SECRET,
+          client_id: this.GITHUB_CLIENT_ID,
+          client_secret: this.GITHUB_CLIENT_SECRET,
           code,
         },
         { headers: { Accept: "application/json" } }
@@ -215,7 +229,7 @@ export class OAuthService {
       name: user.name,
     };
 
-    const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+    const token = jwt.sign(payload, this.JWT_SECRET, {
       expiresIn: "6h",
     });
 
@@ -246,7 +260,7 @@ export class OAuthService {
         name: user.name,
       };
 
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
 

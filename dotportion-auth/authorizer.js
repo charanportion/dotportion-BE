@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-
+const { JWT_SECRET } = process.env;
 /**
  * Lambda Authorizer for API Gateway
  * Validates JWT tokens from your auth service
@@ -17,7 +17,7 @@ export const handler = async (event) => {
     }
 
     // Get JWT secret from environment variable
-    const jwtSecret = "my_secret_key_for_dotportion";
+    const jwtSecret = JWT_SECRET;
 
     if (!jwtSecret) {
       console.error("JWT_SECRET not configured");

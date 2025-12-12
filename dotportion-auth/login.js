@@ -12,13 +12,20 @@ import otpModel from "/opt/nodejs/models/otpModel.js";
 import { AuthService } from "./service/auth-service.js";
 import { AuthController } from "./controller/auth-controller.js";
 
-const { MONGO_URI, MDataBase } = process.env;
+const { MONGO_URI, MDataBase, JWT_SECRET } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
     logger.info("--- Login handler invoked ---");
-    const authService = new AuthService(dbHandler, logger, otpModel, UserModel);
+    const authService = new AuthService(
+      dbHandler,
+      logger,
+      otpModel,
+      UserModel,
+      null,
+      JWT_SECRET
+    );
     const authController = new AuthController(
       authService,
       logger,
