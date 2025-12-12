@@ -114,7 +114,6 @@ export class AccessService {
       };
     } catch (err) {
       this.logger.error("Error in requestAccess:", err);
-      console.log(err.message);
       return { status: 500, message: "Internal server error" };
     }
   }

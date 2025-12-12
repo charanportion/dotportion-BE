@@ -146,7 +146,6 @@ export class OAuthController {
         this.logger.error("Validation failed: Missing request body.");
         return this.createResponse(400, { error: "Request body is missing." });
       }
-      console.log(body, typeof body);
       const { email, username } = body;
 
       if (!email || !username) {
@@ -154,14 +153,11 @@ export class OAuthController {
           error: "Email and username are required",
         });
       }
-      console.log(email, username);
 
       const result = await this.oauthService.saveUsernameAndRefreshTokenByEmail(
         email,
         username
       );
-
-      console.log(result);
 
       if (!result || !result.user) {
         return this.createResponse(404, { error: "User not found" });
@@ -174,7 +170,6 @@ export class OAuthController {
       });
     } catch (err) {
       this.logger.error("Set Username Error (EMAIL BASED)", err);
-      console.log(err.message, err.stack);
       return this.createResponse(500, { error: "Failed to save username" });
     }
   }
