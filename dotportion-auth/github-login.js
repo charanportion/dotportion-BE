@@ -23,6 +23,7 @@ export const handler = async (event) => {
       dbHandler,
       UserModel,
       logger,
+      null,
       JWT_SECRET,
       BASE_URL,
       GOOGLE_CLIENT_ID,

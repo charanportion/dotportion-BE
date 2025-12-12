@@ -12,9 +12,16 @@ const waitlistSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
+      enum: ["requested", "approved", "rejected"],
+      default: "requested",
     },
+    type: {
+      type: String,
+      enum: ["waitlist", "invite"],
+      default: "waitlist",
+    },
+    invited: { type: Boolean, default: false },
+    inviteUsed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

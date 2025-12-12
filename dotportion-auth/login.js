@@ -24,6 +24,7 @@ export const handler = async (event) => {
       otpModel,
       UserModel,
       null,
+      null,
       JWT_SECRET
     );
     const authController = new AuthController(

@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { syncUserAccessWithWaitlist } from "../utils/syncAccess.js";
+
 export class AuthService {
   constructor(
     dbHandler,
@@ -7,12 +9,14 @@ export class AuthService {
     otpModel,
     userModel,
     emailService,
+    waitlistModel,
     JWT_SECRET
   ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.otpModel = otpModel;
     this.userModel = userModel;
+    this.waitlistModel = waitlistModel;
     this.emailService = emailService;
     this.JWT_SECRET = JWT_SECRET;
     this.logger.info("--> AuthService initialized");
@@ -45,6 +49,13 @@ export class AuthService {
         return { status: 400, message: "Username already exists" };
       }
 
+      const existingWaitlist = await this.waitlistModel.findOne({ email });
+
+      if (existingWaitlist && existingWaitlist.invited) {
+        existingWaitlist.inviteUsed = true;
+        await existingWaitlist.save();
+      }
+
       const passwordHash = await this.hashPassword(password);
       const otp = this.generateOtp();
       const user = await this.userModel.create({
@@ -57,6 +68,11 @@ export class AuthService {
         isNewUser: true,
         isVerified: false,
       });
+
+      if (existingWaitlist) {
+        syncUserAccessWithWaitlist(user, existingWaitlist);
+        await user.save();
+      }
 
       const userObj = user.toObject();
       delete userObj.password;

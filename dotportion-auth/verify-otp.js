@@ -26,6 +26,7 @@ export const handler = async (event) => {
       UserModel,
       // EmailService
       null,
+      null,
       JWT_SECRET
     );
     const authController = new AuthController(

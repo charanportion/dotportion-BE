@@ -2,6 +2,7 @@ import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
 import UserModel from "/opt/nodejs/models/UserModel.js";
+import WaitList from "/opt/nodejs/models/WaitListModel.js";
 import { OAuthService } from "./service/oauth-service.js";
 import { OAuthController } from "./controller/oauth-controller.js";
 
@@ -23,6 +24,7 @@ export const handler = async (event) => {
       dbHandler,
       UserModel,
       logger,
+      WaitList,
       JWT_SECRET,
       BASE_URL,
       GOOGLE_CLIENT_ID,
