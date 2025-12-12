@@ -54,6 +54,22 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    access: {
+      status: {
+        type: String,
+        enum: ["none", "requested", "approved", "rejected"],
+        default: "none",
+      },
+      source: {
+        type: String,
+        enum: ["waitlist", "invite"],
+        default: "waitlist",
+      },
+      requestedAt: { type: Date },
+      approvedAt: { type: Date },
+      rejectedAt: { type: Date },
+      approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    },
     profile: {
       name: { type: String },
       contact_number: { type: String },
@@ -82,7 +98,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Ensure email is unique
 userSchema.index({ email: 1, name: 1 }, { unique: true });
 
 export default mongoose.model("User", userSchema);

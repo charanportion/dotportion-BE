@@ -1,6 +1,4 @@
 // import { createDBHandler } from "../layers/common/nodejs/utils/db.js";
-// import UserModel from "../layers/common/nodejs/models/UserModel.js";
-// import otpModel from "../layers/common/nodejs/models/otpModel.js";
 // import logger from "../layers/common/nodejs/utils/logger.js";
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
 // import WaitList from "../layers/common/nodejs/models/WaitListModel.js";
@@ -8,12 +6,10 @@
 import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
-import UserModel from "/opt/nodejs/models/UserModel.js";
-import otpModel from "/opt/nodejs/models/otpModel.js";
 import WaitList from "/opt/nodejs/models/WaitListModel.js";
 import nodemailer from "nodemailer";
-import { AuthService } from "./service/auth-service.js";
-import { AuthController } from "./controller/auth-controller.js";
+import { AdminController } from "./controller/admin-controller.js";
+import { AdminService } from "./service/admin-service.js";
 import { EmailService } from "./service/email-service.js";
 
 const {
@@ -39,21 +35,19 @@ export const handler = async (event) => {
       AUTH_PASSWORD,
       BASE_URL
     );
-    const authService = new AuthService(
+    const adminService = new AdminService(
       dbHandler,
-      logger,
-      otpModel,
-      UserModel,
       WaitList,
-      emailService
+      emailService,
+      logger
     );
-    const authController = new AuthController(
-      authService,
+    const adminController = new AdminController(
+      adminService,
       logger,
       createResponse
     );
 
-    return await authController.signup(event);
+    return await adminController.inviteUser(event);
   } catch (error) {
     logger.error("--- UNHANDLED FATAL ERROR in handler ---", error);
     return {

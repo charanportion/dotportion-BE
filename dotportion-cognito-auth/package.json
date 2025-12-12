@@ -1,5 +1,5 @@
 {
-  "name": "dotportion-cognito-auth",
+  "name": "dotportion-cognit-auth",
   "version": "1.0.0",
   "description": "these apis are responsible for the cognito auth of dotportion",
   "main": "index.js",

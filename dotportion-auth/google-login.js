@@ -10,7 +10,7 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    const oauthService = new OAuthService(dbHandler, UserModel, logger);
+    const oauthService = new OAuthService(dbHandler, logger, UserModel);
     const oauthController = new OAuthController(
       oauthService,
       logger,

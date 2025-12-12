@@ -1,0 +1,10 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "role": "admin"
+    }
+  },
+  "body": {
+    "email": "rushyanjan25@gmail.com"
+  }
+}

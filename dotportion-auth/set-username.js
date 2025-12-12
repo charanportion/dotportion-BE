@@ -2,7 +2,6 @@
 // import UserModel from "../layers/common/nodejs/models/UserModel.js";
 // import logger from "../layers/common/nodejs/utils/logger.js";
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
-
 import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
@@ -15,7 +14,7 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    const oauthService = new OAuthService(dbHandler, UserModel, logger);
+    const oauthService = new OAuthService(dbHandler, logger, UserModel);
     const oauthController = new OAuthController(
       oauthService,
       logger,
