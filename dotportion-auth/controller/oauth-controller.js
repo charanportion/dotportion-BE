@@ -1,3 +1,4 @@
+import { info } from "console";
 // import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 
@@ -139,10 +140,12 @@ export class OAuthController {
   async setUsername(event) {
     const body =
       typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-
     try {
-      this.logger.info("--- Set Username Controller Invoked (EMAIL BASED) ---");
-
+      this.logger.info("--- Set Username Controller Invoked ---");
+      if (!body) {
+        this.logger.error("Validation failed: Missing request body.");
+        return this.createResponse(400, { error: "Request body is missing." });
+      }
       const { email, username } = body;
 
       if (!email || !username) {

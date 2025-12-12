@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 // import { createLog } from "../../layers/common/nodejs/utils/activityLogger.js";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
+import { syncUserAccessWithWaitlist } from "../utils/syncAccess.js";
 
 const BASE_URL = "https://api-dev.dotportion.com";
 
@@ -16,9 +17,10 @@ const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
 const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
 
 export class OAuthService {
-  constructor(dbHandler, userModel, logger) {
+  constructor(dbHandler, logger, userModel, waitListModel) {
     this.dbHandler = dbHandler;
     this.userModel = userModel;
+    this.waitListModel = waitListModel;
     this.logger = logger;
   }
 
@@ -176,20 +178,39 @@ export class OAuthService {
       fullName.toLowerCase().replace(/\s+/g, "") +
       crypto.randomBytes(3).toString("hex");
 
+    const waitlist = await this.waitListModel.findOne({ email });
+
     let user = await this.userModel.findOne({ email });
 
     const isNewUser = !user;
 
+    if (waitlist && waitlist.invited) {
+      waitlist.inviteUsed = true;
+      await waitlist.save();
+    }
+
     if (!user) {
       user = await this.userModel.create({
         email,
-        full_name: fullName, // full name
-        name: username, // username stored here
+        full_name: fullName,
+        name: username,
         picture,
         authProvider: provider,
         isVerified: true,
         isNewUser: true,
+        access: {
+          status: "none",
+          source: "waitlist",
+          requestedAt: null,
+          approvedAt: null,
+          rejectedAt: null,
+          approvedBy: null,
+        },
       });
+      if (waitlist) {
+        syncUserAccessWithWaitlist(user, waitlist);
+        await user.save();
+      }
       createLog({
         userId: user._id,
         action: "oauth-user-created",
@@ -199,6 +220,10 @@ export class OAuthService {
     } else {
       user.isVerified = true;
       user.isNewUser = false;
+      if (waitlist) {
+        syncUserAccessWithWaitlist(user, waitlist);
+      }
+
       await user.save();
 
       createLog({
@@ -252,7 +277,10 @@ export class OAuthService {
 
       return { user, token };
     } catch (err) {
-      this.logger.error("saveUsernameAndRefreshTokenByEmail error", err);
+      this.logger.error("saveUsernameAndRefreshTokenByEmail error", {
+        error: err?.message || err,
+        stack: err?.stack || null,
+      });
       throw err;
     }
   }
