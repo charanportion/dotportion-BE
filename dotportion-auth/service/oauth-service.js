@@ -5,15 +5,6 @@ import crypto from "crypto";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 import { syncUserAccessWithWaitlist } from "../utils/syncAccess.js";
 
-//GOOGLE
-// const GOOGLE_CLIENT_ID =
-//   "136283967428-se8j28502jd882cidpf2dneqli52qvfe.apps.googleusercontent.com";
-// const GOOGLE_CLIENT_SECRET = "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";
-
-//GITHUB
-// const GITHUB_CLIENT_ID = "Ov23linSein9RzxW31BG";
-// const GITHUB_CLIENT_SECRET = "b04e78e44caa1546a16d200c3f872d3f67ef92e5";
-
 export class OAuthService {
   constructor(
     dbHandler,
