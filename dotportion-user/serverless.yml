@@ -7,6 +7,7 @@ custom:
   domains:
     dev: api-dev.dotportion.com
     prod: api.dotportion.com
+    uat: api-uat.dotportion.com
   customDomain:
     domainName: ${self:custom.domains.${self:provider.stage}}
     stage: ${self:provider.stage}
@@ -178,13 +179,13 @@ functions:
             identitySource: method.request.header.Authorization
             arn: ${self:custom.authorizerArn}
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
+# layers:
+#   common:
+#     path: ../layers/common
+#     name: dotportion-common-layer-${self:provider.stage}
+#     description: Common utilities, models, and dependencies
+#     compatibleRuntimes:
+#       - nodejs18.x
 plugins:
   - serverless-offline
   - serverless-prune-plugin

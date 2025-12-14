@@ -36,6 +36,7 @@ provider:
     ZOHO_PORT: ${ssm:/dotportion/${self:provider.stage}/zoho_port}
     AUTH_MAIL: ${ssm:/dotportion/${self:provider.stage}/auth_mail}
     AUTH_PASSWORD: ${ssm:/dotportion/${self:provider.stage}/auth_password}
+    FRONTEND_URL: ${ssm:/dotportion/${self:provider.stage}/frontend_url}
     JWT_SECRET: ${ssm:/dotportion/${self:provider.stage}/jwt_secret}
     GOOGLE_CLIENT_ID: ${ssm:/dotportion/${self:provider.stage}/google_client_id}
     GOOGLE_CLIENT_SECRET: ${ssm:/dotportion/${self:provider.stage}/google_client_secret}
@@ -220,13 +221,13 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
 
-# layers:
-#   common:
-#     path: ../layers/common
-#     name: dotportion-common-layer-${self:provider.stage}
-#     description: Common utilities, models, and dependencies
-#     compatibleRuntimes:
-#       - nodejs18.x
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
 
 plugins:
   - serverless-offline

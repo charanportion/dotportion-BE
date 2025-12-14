@@ -14,6 +14,7 @@ const {
   GOOGLE_CLIENT_SECRET,
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
+  FRONTEND_URL,
 } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
@@ -34,7 +35,8 @@ export const handler = async (event) => {
     const oauthController = new OAuthController(
       oauthService,
       logger,
-      createResponse
+      createResponse,
+      FRONTEND_URL
     );
 
     return await oauthController.githubLogin(event);

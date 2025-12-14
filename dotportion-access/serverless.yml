@@ -7,6 +7,7 @@ custom:
   domains:
     dev: api-dev.dotportion.com
     prod: api.dotportion.com
+    uat: api-uat.dotportion.com
   customDomain:
     domainName: ${self:custom.domains.${self:provider.stage}}
     stage: ${self:provider.stage}
