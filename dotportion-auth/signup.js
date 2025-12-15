@@ -44,8 +44,8 @@ export const handler = async (event) => {
       logger,
       otpModel,
       UserModel,
-      WaitList,
-      emailService
+      emailService,
+      WaitList
     );
     const authController = new AuthController(
       authService,

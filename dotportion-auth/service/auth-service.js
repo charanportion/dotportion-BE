@@ -8,8 +8,9 @@ export class AuthService {
     logger,
     otpModel,
     userModel,
+    emailService,
     waitlistModel,
-    emailService
+    JWT_SECRET
   ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
@@ -17,6 +18,7 @@ export class AuthService {
     this.userModel = userModel;
     this.waitlistModel = waitlistModel;
     this.emailService = emailService;
+    this.JWT_SECRET = JWT_SECRET;
     this.logger.info("--> AuthService initialized");
   }
 
@@ -139,7 +141,7 @@ export class AuthService {
         name: user.name,
       };
 
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
       return {
@@ -213,7 +215,7 @@ export class AuthService {
         name: user.name,
       };
 
-      const token = jwt.sign(payload, "my_secret_key_for_dotportion", {
+      const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
 

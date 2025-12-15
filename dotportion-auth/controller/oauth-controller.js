@@ -3,10 +3,11 @@ import { info } from "console";
 import { createLog } from "../opt/nodejs/utils/activityLogger.js";
 
 export class OAuthController {
-  constructor(oauthService, logger, createResponse) {
+  constructor(oauthService, logger, createResponse, FRONTEND_URL) {
     this.oauthService = oauthService;
     this.logger = logger;
     this.createResponse = createResponse;
+    this.FRONTEND_URL = FRONTEND_URL;
   }
 
   async googleLogin(event) {
@@ -37,8 +38,6 @@ export class OAuthController {
   async googleCallback(event) {
     try {
       const code = event.queryStringParameters?.code;
-
-      const FRONTEND_URL = "http://localhost:3000";
       createLog({
         action: "google-callback-received",
         type: "info",
@@ -63,7 +62,7 @@ export class OAuthController {
       });
 
       return this.createResponse(302, null, {
-        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
+        Location: `${this.FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
       });
     } catch (err) {
       this.logger.error("Google OAuth callback error", err);
@@ -104,7 +103,6 @@ export class OAuthController {
     try {
       const code = event.queryStringParameters?.code;
 
-      const FRONTEND_URL = "http://localhost:3000";
       createLog({
         action: "github-callback-received",
         type: "info",
@@ -124,7 +122,7 @@ export class OAuthController {
       });
 
       return this.createResponse(302, null, {
-        Location: `${FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
+        Location: `${this.FRONTEND_URL}/auth/success?token=${result.token}&new_user=${result.isNewUser}&email=${result.user.email}`,
       });
     } catch (err) {
       this.logger.error("GitHub OAuth callback error", err);

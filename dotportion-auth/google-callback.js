@@ -6,21 +6,38 @@ import WaitList from "/opt/nodejs/models/WaitListModel.js";
 import { OAuthService } from "./service/oauth-service.js";
 import { OAuthController } from "./controller/oauth-controller.js";
 
-const { MONGO_URI, MDataBase } = process.env;
+const {
+  MONGO_URI,
+  MDataBase,
+  JWT_SECRET,
+  BASE_URL,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET,
+  FRONTEND_URL,
+} = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
     const oauthService = new OAuthService(
       dbHandler,
-      logger,
       UserModel,
-      WaitList
+      logger,
+      WaitList,
+      JWT_SECRET,
+      BASE_URL,
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      GITHUB_CLIENT_ID,
+      GITHUB_CLIENT_SECRET
     );
     const oauthController = new OAuthController(
       oauthService,
       logger,
-      createResponse
+      createResponse,
+      FRONTEND_URL
     );
 
     return await oauthController.googleCallback(event);
