@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "npx nodemon run start"
+    "dev": "npx nodemon run start",
+    "test": "jest --runInBand"
   },
   "keywords": [],
   "author": "",

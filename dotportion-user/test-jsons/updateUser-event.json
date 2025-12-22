@@ -1,7 +1,7 @@
 {
   "requestContext": {
     "authorizer": {
-      "userId": "692eeee4ee6c704412cbfbf4"
+      "userId": "693d3d2c2a593e5ab1950c00"
     }
   },
   "body": {
@@ -10,7 +10,7 @@
       "experience_level": "Intrermediate",
       "subscription_tutorials": true,
       "subscription_newsletter": true,
-      "name": "Rushyanjan Karthik",
+      "name": "test",
       "contact_number": "7569442152"
     }
   }

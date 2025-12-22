@@ -53,6 +53,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -78,6 +82,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -103,6 +111,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -128,6 +140,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
