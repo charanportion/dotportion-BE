@@ -9,12 +9,18 @@ import UserModel from "/opt/nodejs/models/UserModel.js";
 import { OAuthService } from "./service/oauth-service.js";
 import { OAuthController } from "./controller/oauth-controller.js";
 
-const { MONGO_URI, MDataBase } = process.env;
+const { MONGO_URI, MDataBase, JWT_SECRET } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    const oauthService = new OAuthService(dbHandler, logger, UserModel);
+    const oauthService = new OAuthService(
+      dbHandler,
+      UserModel,
+      logger,
+      null,
+      JWT_SECRET
+    );
     const oauthController = new OAuthController(
       oauthService,
       logger,
