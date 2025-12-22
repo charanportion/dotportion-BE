@@ -72,6 +72,7 @@ export class UserService {
         }
       }
       if (full_name) update.full_name = full_name;
+      update.isNewUser = false;
 
       const updatedUser = await this.userModel
         .findByIdAndUpdate(userId, { $set: update }, { new: true })
