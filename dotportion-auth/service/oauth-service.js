@@ -219,6 +219,9 @@ export class OAuthService {
         syncUserAccessWithWaitlist(user, waitlist);
         await user.save();
       }
+
+      await this.emailService.sendWelcomeMail(email, fullName);
+
       createLog({
         userId: user._id,
         action: "oauth-user-created",
