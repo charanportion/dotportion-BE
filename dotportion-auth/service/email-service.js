@@ -77,4 +77,38 @@ export class EmailService {
 
     await this.send(to, subject, htmlContent);
   }
+
+  async sendWelcomeMail(to, name = "there") {
+    const subject = "Welcome to DotPortion 🎉";
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+        <h2 style="color: #333;">Welcome to DotPortion, ${name}!</h2>
+  
+        <p>We’re excited to have you on board 🚀</p>
+  
+        <p>
+          DotPortion helps you design, manage, and scale your APIs efficiently with
+          intuitive tools and powerful integrations.
+        </p>
+  
+        <p>
+          If you have any questions or need help getting started, feel free to reach out to us.
+        </p>
+  
+        <p style="margin-top: 24px;">
+          Cheers,<br />
+          <strong>The DotPortion Team</strong>
+        </p>
+  
+        <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;" />
+  
+        <p style="font-size: 12px; color: #777;">
+          You’re receiving this email because you successfully signed up for DotPortion.
+        </p>
+      </div>
+    `;
+
+    await this.send(to, subject, htmlContent);
+  }
 }
