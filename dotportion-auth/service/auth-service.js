@@ -92,6 +92,7 @@ export class AuthService {
       });
 
       await this.emailService.sendOtpEmail(email, otp);
+      await this.emailService.sendWelcomeMail(email, full_name);
 
       return {
         status: 201,

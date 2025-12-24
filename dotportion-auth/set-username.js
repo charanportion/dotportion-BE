@@ -19,6 +19,7 @@ export const handler = async (event) => {
       UserModel,
       logger,
       null,
+      null,
       JWT_SECRET
     );
     const oauthController = new OAuthController(

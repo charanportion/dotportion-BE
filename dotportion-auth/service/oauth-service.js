@@ -11,6 +11,7 @@ export class OAuthService {
     userModel,
     logger,
     waitListModel,
+    emailService,
     JWT_SECRET,
     BASE_URL,
     GOOGLE_CLIENT_ID,
@@ -22,6 +23,7 @@ export class OAuthService {
     this.userModel = userModel;
     this.waitListModel = waitListModel;
     this.logger = logger;
+    this.emailService = emailService;
     this.JWT_SECRET = JWT_SECRET;
     this.BASE_URL = BASE_URL;
     this.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
@@ -217,6 +219,9 @@ export class OAuthService {
         syncUserAccessWithWaitlist(user, waitlist);
         await user.save();
       }
+
+      await this.emailService.sendWelcomeMail(email, fullName);
+
       createLog({
         userId: user._id,
         action: "oauth-user-created",
@@ -231,6 +236,8 @@ export class OAuthService {
       }
 
       await user.save();
+
+      await this.emailService.sendWelcomeMail(email, fullName);
 
       createLog({
         userId: user._id,
