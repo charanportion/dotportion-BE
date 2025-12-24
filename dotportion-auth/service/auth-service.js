@@ -140,7 +140,14 @@ export class AuthService {
         email: user.email,
         name: user.name,
       };
-
+      if (context === "FORGOT_PASSWORD") {
+        return {
+          status: 200,
+          message: "OTP verified successfully",
+          // token,
+          user: userObj,
+        };
+      }
       const token = jwt.sign(payload, this.JWT_SECRET, {
         expiresIn: "6h",
       });
@@ -265,7 +272,7 @@ export class AuthService {
     }
   }
 
-  async resetPassword(email, otp, newPassword) {
+  async resetPassword(email, newPassword) {
     try {
       await this.dbHandler.connectDb();
 
@@ -275,21 +282,17 @@ export class AuthService {
       const userOtp = await this.otpModel.findOne({
         email,
         context: "FORGOT_PASSWORD",
-        used: false,
+        used: true,
       });
 
-      if (!userOtp)
-        return { status: 400, message: "No valid OTP found for reset" };
-      if (userOtp.expiresAt < new Date())
-        return { status: 400, message: "OTP expired" };
-      if (userOtp.otp !== otp)
-        return { status: 400, message: "Invalid OTP entered" };
+      if (!userOtp) return { status: 400, message: "Not verified" };
+      // if (userOtp.expiresAt < new Date())
+      //   return { status: 400, message: "OTP expired" };
+      // if (userOtp.otp !== otp)
+      //   return { status: 400, message: "Invalid OTP entered" };
 
       user.password = await this.hashPassword(newPassword);
       await user.save();
-
-      userOtp.used = true;
-      await userOtp.save();
 
       return {
         status: 200,

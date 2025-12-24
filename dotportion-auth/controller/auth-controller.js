@@ -481,12 +481,8 @@ export class AuthController {
       }
       this.logger.info(`Received request body: ${JSON.stringify(body)}`);
 
-      const { email, otp, new_password } = body;
-      const result = await this.authService.resetPassword(
-        email,
-        otp,
-        new_password
-      );
+      const { email, new_password } = body;
+      const result = await this.authService.resetPassword(email, new_password);
 
       if (result.status === 400 || result.status === 404) {
         createLog({

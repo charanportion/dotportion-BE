@@ -2,11 +2,6 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    cognitoSub: {
-      type: String,
-      unique: true,
-      index: true,
-    },
     full_name: {
       type: String,
       required: true,
