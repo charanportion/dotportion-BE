@@ -52,6 +52,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -77,6 +81,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -102,6 +110,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -127,6 +139,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -151,6 +167,11 @@ functions:
             origins:
               - "http://localhost:3000"
               - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers:
               - Content-Type
               - Authorization
@@ -170,6 +191,11 @@ functions:
             origins:
               - "http://localhost:3000"
               - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers:
               - Content-Type
               - Authorization
@@ -179,13 +205,14 @@ functions:
             identitySource: method.request.header.Authorization
             arn: ${self:custom.authorizerArn}
 
-# layers:
-#   common:
-#     path: ../layers/common
-#     name: dotportion-common-layer-${self:provider.stage}
-#     description: Common utilities, models, and dependencies
-#     compatibleRuntimes:
-#       - nodejs18.x
+layers:
+  common:
+    path: ../layers/common
+    name: dotportion-common-layer-${self:provider.stage}
+    description: Common utilities, models, and dependencies
+    compatibleRuntimes:
+      - nodejs18.x
+
 plugins:
   - serverless-offline
   - serverless-prune-plugin

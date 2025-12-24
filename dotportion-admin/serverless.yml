@@ -7,6 +7,7 @@ custom:
   domains:
     dev: api-dev.dotportion.com
     prod: api.dotportion.com
+    uat: api-uat.dotportion.com
   customDomain:
     domainName: ${self:custom.domains.${self:provider.stage}}
     stage: ${self:provider.stage}
@@ -51,9 +52,13 @@ functions:
           method: POST
           cors:
             origins:
-              - "http://localhost:3000"
+              - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers:
               - Content-Type
               - Authorization
@@ -67,13 +72,13 @@ functions:
             resultTtlInSeconds: 300
             arn: ${self:custom.authorizerArn}
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
+# layers:
+#   common:
+#     path: ../layers/common
+#     name: dotportion-common-layer-${self:provider.stage}
+#     description: Common utilities, models, and dependencies
+#     compatibleRuntimes:
+#       - nodejs18.x
 
 plugins:
   - serverless-offline

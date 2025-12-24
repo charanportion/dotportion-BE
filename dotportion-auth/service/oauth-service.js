@@ -51,7 +51,7 @@ export class OAuthService {
       createLog({
         action: "google-oauth-callback",
         type: "info",
-        metadata: { reuest: code },
+        metadata: { request: code },
       });
 
       // 1. Exchange code for access token + id token
