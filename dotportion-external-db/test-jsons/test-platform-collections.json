@@ -1,0 +1,20 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    },
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "httpMethod": "GET",
+  "pathParameters": {
+    "projectId": "6919d3f8d037ac99f94f89ca"
+  },
+  "queryStringParameters": {},
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

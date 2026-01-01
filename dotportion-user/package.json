@@ -12,7 +12,10 @@
   "author": "sri charan",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongoose": "^8.18.2"
   },
   "devDependencies": {
     "serverless-domain-manager": "^8.0.0",

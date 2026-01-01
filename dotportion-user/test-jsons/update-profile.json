@@ -1,0 +1,10 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "692eeee4ee6c704412cbfbf4"
+    }
+  },
+  "body": {
+    "full_name": "Gudipati Rushyanjan Karthik"
+  }
+}

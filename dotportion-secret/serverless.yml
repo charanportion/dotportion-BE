@@ -8,14 +8,14 @@ custom:
   domains:
     dev: api-dev.dotportion.com
     prod: api.dotportion.com
+    uat: api-uat.dotportion.com
   customDomain:
     domainName: ${self:custom.domains.${self:provider.stage}}
     stage: ${self:provider.stage}
     createRoute53Record: false
     basePath: "secrets"
     endpointType: "regional"
-  cognito:
-    userPoolArn: "arn:aws:cognito-idp:ap-south-1:074624701502:userpool/ap-south-1_25OzAmAmZ"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
 
 provider:
   name: aws
@@ -28,6 +28,10 @@ provider:
       Action:
         - "ssm:GetParameter"
       Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
 
   environment:
     MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
@@ -46,6 +50,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -54,7 +62,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   getProjectSecrets:
     handler: get-project-secrets.handler
@@ -67,6 +78,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -75,7 +90,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   getSecret:
     handler: get-secret.handler
@@ -88,6 +106,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -96,7 +118,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   updateSecret:
     handler: update-secret.handler
@@ -109,6 +134,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -117,7 +146,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   deleteSecret:
     handler: delete-secret.handler
@@ -130,6 +162,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -138,7 +174,10 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
   getSecretByProvider:
     handler: get-secret-provider.handler
@@ -151,6 +190,10 @@ functions:
               - "http://localhost:3000" # For local development
               - "https://www.dotportion.com/"
               - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
             headers: # Optional: specify allowed headers
               - Content-Type
               - X-Amz-Date
@@ -159,15 +202,18 @@ functions:
               - X-Amz-Security-Token
             allowCredentials: true
           authorizer:
-            arn: ${self:custom.cognito.userPoolArn}
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300 # Cache authorization for 5 minutes
+            arn: ${self:custom.authorizerArn}
 
-layers:
-  common:
-    path: ../layers/common
-    name: dotportion-common-layer-${self:provider.stage}
-    description: Common utilities, models, and dependencies
-    compatibleRuntimes:
-      - nodejs18.x
+# layers:
+#   common:
+#     path: ../layers/common
+#     name: dotportion-common-layer-${self:provider.stage}
+#     description: Common utilities, models, and dependencies
+#     compatibleRuntimes:
+#       - nodejs18.x
 
 plugins:
   - serverless-offline

@@ -1,0 +1,25 @@
+{
+  "body": {
+    "project": "6919d3f8d037ac99f94f89ca",
+    "workflow": "691b13d17a789ea4b33482a8",
+    "plan": "free",
+    "trigger": {
+      "type": "api",
+      "request": {
+        "method": "POST",
+        "path": "/api/v1/users",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer sk_..."
+        },
+        "queryParams": {
+          "source": "webapp"
+        },
+        "body": {
+          "name": "Jane Doe",
+          "email": "jane.doe@example.com"
+        }
+      }
+    }
+  }
+}

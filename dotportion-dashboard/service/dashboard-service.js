@@ -4,42 +4,42 @@ export class DashboardService {
     logger,
     ProjectModel,
     WorkflowModel,
-    LogModel,
+    ExecutionLogModel,
     SecretModel
   ) {
     this.dbHandler = dbHandler;
     this.logger = logger;
     this.ProjectModel = ProjectModel;
     this.WorkflowModel = WorkflowModel;
-    this.LogModel = LogModel;
+    this.ExecutionLogModel = ExecutionLogModel;
     this.SecretModel = SecretModel;
     this.logger.info(`-->Dashboard Service initialized`);
   }
 
   // 1. Total Counts
-  async getTotalCounts(cognitoSub) {
+  async getTotalCounts(userId) {
     try {
       this.logger.info(
-        `-->getTotalCounts service invoked with userId: ${cognitoSub}`
+        `-->getTotalCounts service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
       const [projects, workflows, secrets] = await Promise.all([
-        this.ProjectModel.countDocuments({ owner: cognitoSub }),
-        this.WorkflowModel.countDocuments({ owner: cognitoSub }),
-        this.SecretModel.countDocuments({ owner: cognitoSub }),
+        this.ProjectModel.countDocuments({ owner: userId }),
+        this.WorkflowModel.countDocuments({ owner: userId }),
+        this.SecretModel.countDocuments({ owner: userId }),
       ]);
 
       // Get logs via their projects
       const userProjects = await this.ProjectModel.find({
-        owner: cognitoSub,
+        owner: userId,
       }).select("_id");
       const projectIds = userProjects.map((p) => p._id);
 
       const [totalLogs, successLogs] = await Promise.all([
-        this.LogModel.countDocuments({ project: { $in: projectIds } }),
-        this.LogModel.countDocuments({
+        this.ExecutionLogModel.countDocuments({ project: { $in: projectIds } }),
+        this.ExecutionLogModel.countDocuments({
           project: { $in: projectIds },
           status: "success",
         }),
@@ -60,27 +60,27 @@ export class DashboardService {
   }
 
   // 2. API Calls Over Time (last 7 days)
-  async getApiCallsOverTime(cognitoSub) {
+  async getApiCallsOverTime(userId) {
     try {
       this.logger.info(
-        `-->getApiCallsOverTime service invoked with userId: ${cognitoSub}`
+        `-->getApiCallsOverTime service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
       const userProjects = await this.ProjectModel.find({
-        owner: cognitoSub,
+        owner: userId,
       }).select("_id");
       const projectIds = userProjects.map((p) => p._id);
 
-      const result = await this.LogModel.aggregate([
+      const result = await this.ExecutionLogModel.aggregate([
         { $match: { project: { $in: projectIds } } },
         {
           $group: {
             _id: {
-              year: { $year: "$timestamp" },
-              month: { $month: "$timestamp" },
-              day: { $dayOfMonth: "$timestamp" },
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+              day: { $dayOfMonth: "$createdAt" },
             },
             totalCalls: { $sum: 1 },
           },
@@ -99,15 +99,15 @@ export class DashboardService {
   }
 
   // 3. Top 5 Projects by API Calls
-  async getTopProjectsByApiCalls(cognitoSub) {
+  async getTopProjectsByApiCalls(userId) {
     try {
       this.logger.info(
-        `-->getTopProjectsByApiCalls service invoked with userId: ${cognitoSub}`
+        `-->getTopProjectsByApiCalls service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
-      const projects = await this.ProjectModel.find({ owner: cognitoSub })
+      const projects = await this.ProjectModel.find({ owner: userId })
         .sort({ "stats.totalApiCalls": -1 })
         .limit(5)
         .select("name stats.totalApiCalls");
@@ -126,15 +126,15 @@ export class DashboardService {
   }
 
   // 4. Top 5 Workflows by API Calls
-  async getTopWorkflowsByApiCalls(cognitoSub) {
+  async getTopWorkflowsByApiCalls(userId) {
     try {
       this.logger.info(
-        `-->getTopWorkflowsByApiCalls service invoked with userId: ${cognitoSub}`
+        `-->getTopWorkflowsByApiCalls service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
-      const workflows = await this.WorkflowModel.find({ owner: cognitoSub })
+      const workflows = await this.WorkflowModel.find({ owner: userId })
         .sort({ "stats.totalCalls": -1 })
         .limit(5)
         .select("name stats.totalCalls");
@@ -153,16 +153,16 @@ export class DashboardService {
   }
 
   // 5. Secrets by Provider
-  async getSecretsByProvider(cognitoSub) {
+  async getSecretsByProvider(userId) {
     try {
       this.logger.info(
-        `-->getSecretsByProvider service invoked with userId: ${cognitoSub}`
+        `-->getSecretsByProvider service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
       const result = await this.SecretModel.aggregate([
-        { $match: { owner: cognitoSub } },
+        { $match: { owner: userId } },
         { $group: { _id: "$provider", count: { $sum: 1 } } },
       ]);
 
@@ -174,20 +174,20 @@ export class DashboardService {
   }
 
   // 6. Success vs Failed Calls
-  async getSuccessVsFailedCalls(cognitoSub) {
+  async getSuccessVsFailedCalls(userId) {
     try {
       this.logger.info(
-        `-->getSuccessVsFailedCalls service invoked with userId: ${cognitoSub}`
+        `-->getSuccessVsFailedCalls service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
       const userProjects = await this.ProjectModel.find({
-        owner: cognitoSub,
+        owner: userId,
       }).select("_id");
       const projectIds = userProjects.map((p) => p._id);
 
-      const result = await this.LogModel.aggregate([
+      const result = await this.ExecutionLogModel.aggregate([
         { $match: { project: { $in: projectIds } } },
         {
           $group: {
@@ -198,7 +198,7 @@ export class DashboardService {
       ]);
 
       const success = result.find((r) => r._id === "success")?.count || 0;
-      const failed = result.find((r) => r._id === "error")?.count || 0;
+      const failed = result.find((r) => r._id === "fail")?.count || 0;
 
       return { success, failed };
     } catch (error) {
@@ -208,16 +208,16 @@ export class DashboardService {
   }
 
   // 7. Requests by Method
-  async getRequestsByMethod(cognitoSub) {
+  async getRequestsByMethod(userId) {
     try {
       this.logger.info(
-        `-->getRequestsByMethod service invoked with userId: ${cognitoSub}`
+        `-->getRequestsByMethod service invoked with userId: ${userId}`
       );
 
       await this.dbHandler.connectDb();
 
       const result = await this.WorkflowModel.aggregate([
-        { $match: { owner: cognitoSub } },
+        { $match: { owner: userId } },
         { $group: { _id: "$method", count: { $sum: 1 } } },
       ]);
 
@@ -229,13 +229,13 @@ export class DashboardService {
   }
 
   // Main method to get all dashboard data
-  async getGlobalDashboardData(cognitoSub) {
+  async getGlobalDashboardData(userId) {
     try {
       this.logger.info(
-        `-->getDashboardData service invoked with userId: ${cognitoSub}`
+        `-->getDashboardData service invoked with userId: ${userId}`
       );
 
-      if (!cognitoSub) {
+      if (!userId) {
         this.logger.warn("getDashboardData called without a userId.");
         return { error: true, message: "No User ID" };
       }
@@ -249,13 +249,13 @@ export class DashboardService {
         successVsFailed,
         requestsByMethod,
       ] = await Promise.all([
-        this.getTotalCounts(cognitoSub),
-        this.getApiCallsOverTime(cognitoSub),
-        this.getTopProjectsByApiCalls(cognitoSub),
-        this.getTopWorkflowsByApiCalls(cognitoSub),
-        this.getSecretsByProvider(cognitoSub),
-        this.getSuccessVsFailedCalls(cognitoSub),
-        this.getRequestsByMethod(cognitoSub),
+        this.getTotalCounts(userId),
+        this.getApiCallsOverTime(userId),
+        this.getTopProjectsByApiCalls(userId),
+        this.getTopWorkflowsByApiCalls(userId),
+        this.getSecretsByProvider(userId),
+        this.getSuccessVsFailedCalls(userId),
+        this.getRequestsByMethod(userId),
       ]);
 
       // Check if any of the methods returned an error

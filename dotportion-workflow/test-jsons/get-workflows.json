@@ -1,14 +1,12 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "6919c993f2ba6ecf577041a2",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
     }
   },
   "pathParameters": {
-    "projectId": "68836caf709af61cf2013959"
+    "projectId": "691cbec76d4bc01ce317f2c5"
   }
 }

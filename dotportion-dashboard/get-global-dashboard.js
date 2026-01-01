@@ -3,15 +3,15 @@
 // import { createResponse } from "../layers/common/nodejs/utils/api.js";
 // import ProjectModel from "../layers/common/nodejs/models/ProjectModel.js";
 // import WorkflowModel from "../layers/common/nodejs/models/WorkflowModel.js";
-// import LogModel from "../layers/common/nodejs/models/LogModel.js";
 // import SecretModel from "../layers/common/nodejs/models/SecretModel.js";
+// import ExecutionLogModel from "../layers/common/nodejs/models/ExecutionLog.js";
 import { createDBHandler } from "/opt/nodejs/utils/db.js";
 import logger from "/opt/nodejs/utils/logger.js";
 import { createResponse } from "/opt/nodejs/utils/api.js";
 import ProjectModel from "/opt/nodejs/models/ProjectModel.js";
 import WorkflowModel from "/opt/nodejs/models/WorkflowModel.js";
-import LogModel from "/opt/nodejs/models/LogModel.js";
 import SecretModel from "/opt/nodejs/models/SecretModel.js";
+import ExecutionLogModel from "/opt/nodejs/models/ExecutionLog.js";
 import { DashboardService } from "./service/dashboard-service.js";
 import { DashboardController } from "./controller/dashboard-controller.js";
 
@@ -21,13 +21,13 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    logger.info("received Get Global Dashboard event:", JSON.stringify(event));
+    logger.info("received get global dashboard event:", JSON.stringify(event));
     const dashboardService = new DashboardService(
       dbHandler,
       logger,
       ProjectModel,
       WorkflowModel,
-      LogModel,
+      ExecutionLogModel,
       SecretModel
     );
     const dashboardController = new DashboardController(

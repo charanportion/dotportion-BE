@@ -10,7 +10,6 @@ const SecretSchema = new mongoose.Schema(
     owner: {
       type: String,
       required: true,
-      index: true,
     },
     project: {
       type: mongoose.Schema.Types.ObjectId,

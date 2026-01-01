@@ -1,0 +1,28 @@
+{
+  "name": "dotportion-database",
+  "version": "1.0.0",
+  "description": "Database module for DotPortion",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1000.0",
+    "express": "^5.1.0",
+    "mongodb": "^6.18.0",
+    "mongoose": "^7.0.0"
+  },
+  "devDependencies": {
+    "serverless-domain-manager": "^8.0.0",
+    "serverless-offline": "^14.4.0",
+    "serverless-prune-plugin": "^2.1.0"
+  },
+  "keywords": [
+    "workflow",
+    "lambda",
+    "serverless"
+  ],
+  "author": "sri charan",
+  "license": "ISC"
+}

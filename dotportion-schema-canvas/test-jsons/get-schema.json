@@ -1,0 +1,14 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    }
+  },
+  "body": {},
+  "pathParameters": {
+    "projectId": "68836caf709af61cf2013959",
+    "dataBase": "platform"
+  }
+}

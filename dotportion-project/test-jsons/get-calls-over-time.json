@@ -1,21 +1,13 @@
 {
-  "httpMethod": "GET",
-  "path": "/projects/507f1f77bcf86cd799439011/analytics/calls-over-time",
-  "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer test-token"
-  },
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
     }
   },
   "pathParameters": {
-    "projectId": "688334f46ac6e7423a465f96"
+    "projectId": "6919d3f8d037ac99f94f89ca"
   },
   "queryStringParameters": {
     "range": "7",

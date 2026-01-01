@@ -1,15 +1,13 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "692a95f0e72cdbce31691ef3",
+      "email": "rushyanjan25@gmail.com",
+      "name": "shario_api"
     }
   },
   "body": {
-    "name": "test",
-    "description": "test"
+    "name": "test-native",
+    "description": "test-native"
   }
 }

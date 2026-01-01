@@ -1,0 +1,17 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "693d3d2c2a593e5ab1950c00"
+    }
+  },
+  "body": {
+    "profile": {
+      "tools": ["Nodejs", "Cypress"],
+      "experience_level": "Intrermediate",
+      "subscription_tutorials": true,
+      "subscription_newsletter": true,
+      "name": "test",
+      "contact_number": "7569442152"
+    }
+  }
+}

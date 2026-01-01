@@ -1,0 +1,92 @@
+org: dotportion
+service: dotportion-admin-api
+custom:
+  prune:
+    automatic: true
+    number: 2
+  domains:
+    dev: api-dev.dotportion.com
+    prod: api.dotportion.com
+    uat: api-uat.dotportion.com
+  customDomain:
+    domainName: ${self:custom.domains.${self:provider.stage}}
+    stage: ${self:provider.stage}
+    createRoute53Record: false
+    basePath: "admin"
+    endpointType: "regional"
+  authorizerArn: ${cf:dotportion-auth-api-${self:provider.stage}.AuthorizerArn}
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
+    - Effect: Allow
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: ${self:custom.authorizerArn}
+  # Environment variables will be available to all your functions
+  # It's highly recommended to use a service like AWS Secrets Manager for production
+  environment:
+    MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
+    MDataBase: ${self:provider.stage}
+    ZOHO_HOST: ${ssm:/dotportion/${self:provider.stage}/zoho_host}
+    ZOHO_PORT: ${ssm:/dotportion/${self:provider.stage}/zoho_port}
+    AUTH_MAIL: ${ssm:/dotportion/${self:provider.stage}/auth_mail}
+    AUTH_PASSWORD: ${ssm:/dotportion/${self:provider.stage}/auth_password}
+    BASE_URL: https://${self:custom.domains.${self:provider.stage}}
+
+functions:
+  inviteUser:
+    handler: invite-user.handler
+    timeout: 30
+    events:
+      - http:
+          path: /invite
+          method: POST
+          cors:
+            origins:
+              - "http://localhost:3000" # For local development
+              - "https://www.dotportion.com/"
+              - "https://no-code-api-builder-edby86tby-sri-charans-projects.vercel.app/"
+              - "https://uat.dotportion.com"
+              - "https://beta.dotportion.com"
+              - "https://uat.d34dhbi3es40ie.amplifyapp.com"
+              - "https://beta.d34dhbi3es40ie.amplifyapp.com"
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: true
+          authorizer:
+            type: token
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 300
+            arn: ${self:custom.authorizerArn}
+
+# layers:
+#   common:
+#     path: ../layers/common
+#     name: dotportion-common-layer-${self:provider.stage}
+#     description: Common utilities, models, and dependencies
+#     compatibleRuntimes:
+#       - nodejs18.x
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-domain-manager
+
+# This tells the packaging process to exclude the AWS SDK, which is already available in the Lambda environment.
+package:
+  individually: true
+  exclude:
+    - node_modules/aws-sdk/**

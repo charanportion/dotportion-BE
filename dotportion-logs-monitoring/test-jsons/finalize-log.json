@@ -1,0 +1,16 @@
+{
+  "pathParameters": {
+    "logId": "691c0b92d1bc809c6d3980d1"
+  },
+  "body": {
+    "status": "success",
+    "durationMs": 2450,
+    "response": {
+      "statusCode": 201,
+      "body": {
+        "message": "User created successfully",
+        "userId": "usr_c4d5e6f7"
+      }
+    }
+  }
+}

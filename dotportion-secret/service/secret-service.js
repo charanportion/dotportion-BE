@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export class SecretService {
   constructor(dbHandler, logger, SecretModel) {
     this.dbHandler = dbHandler;
@@ -6,7 +8,7 @@ export class SecretService {
     this.logger.info(`-->Secret Service initialized`);
   }
 
-  async createSecret(tenant, cognitoSub, projectId, secretData) {
+  async createSecret(tenant, userId, projectId, secretData) {
     try {
       this.logger.info(
         `-->createSecret service invoked with projectId:`,
@@ -16,8 +18,8 @@ export class SecretService {
         this.logger.warn("createSecret called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("createSecret called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("createSecret called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       if (!tenant) {
@@ -30,6 +32,7 @@ export class SecretService {
       }
 
       await this.dbHandler.connectDb();
+
       // Check if secret with same provider already exists for this project
       const existingSecret = await this.SecretModel.findOne({
         project: projectId,
@@ -45,7 +48,7 @@ export class SecretService {
 
       const secret = await this.SecretModel.create({
         tenant,
-        owner: cognitoSub,
+        owner: userId,
         project: projectId,
         provider: secretData.provider,
         data: secretData.data,
@@ -58,7 +61,7 @@ export class SecretService {
     }
   }
 
-  async getProjectSecrets(cognitoSub, projectId) {
+  async getProjectSecrets(userId, projectId) {
     try {
       this.logger.info(
         `-->getProjectSecrets service invoked with projectId:`,
@@ -68,8 +71,8 @@ export class SecretService {
         this.logger.warn("getProjectSecrets called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getProjectSecrets called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getProjectSecrets called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
 
@@ -83,7 +86,7 @@ export class SecretService {
     }
   }
 
-  async getSecretById(cognitoSub, secretId) {
+  async getSecretById(userId, secretId) {
     try {
       this.logger.info(
         `-->getSecretById service invoked with secretId:`,
@@ -93,8 +96,8 @@ export class SecretService {
         this.logger.warn("getSecretById called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getSecretById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getSecretById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
 
@@ -102,7 +105,7 @@ export class SecretService {
 
       const secret = await this.SecretModel.findOne({
         _id: secretId,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!secret) {
@@ -115,7 +118,7 @@ export class SecretService {
     }
   }
 
-  async updateSecret(cognitoSub, secretId, updateData) {
+  async updateSecret(userId, secretId, updateData) {
     try {
       this.logger.info(
         `-->updateSecret service invoked with secretId:`,
@@ -125,8 +128,8 @@ export class SecretService {
         this.logger.warn("updateSecret called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("updateSecret called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("updateSecret called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
       if (!updateData) {
@@ -137,7 +140,7 @@ export class SecretService {
       await this.dbHandler.connectDb();
 
       const secret = await this.SecretModel.findOneAndUpdate(
-        { _id: secretId },
+        { _id: secretId, owner: userId },
         { $set: { data: updateData.data } },
         { new: true, runValidators: true }
       );
@@ -153,7 +156,7 @@ export class SecretService {
     }
   }
 
-  async deleteSecret(cognitoSub, secretId) {
+  async deleteSecret(userId, secretId) {
     try {
       this.logger.info(
         `-->deleteSecret service invoked with secretId:`,
@@ -163,8 +166,8 @@ export class SecretService {
         this.logger.warn("deleteSecret called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("deleteSecret called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("deleteSecret called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
 
@@ -172,7 +175,7 @@ export class SecretService {
 
       const secret = await this.SecretModel.findOneAndDelete({
         _id: secretId,
-        owner: cognitoSub,
+        owner: userId,
       });
 
       if (!secret) {

@@ -1,0 +1,13 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "6919c993f2ba6ecf577041a2",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    }
+  },
+  "pathParameters": {
+    "workflowId": "691b12e3d0e9a450d01e8b39"
+  },
+  "body": "{\"projectId\": \"691cbec76d4bc01ce317f2c5\" }"
+}

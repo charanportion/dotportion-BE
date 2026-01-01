@@ -10,18 +10,18 @@ export class DashboardController {
     try {
       this.logger.info("-->getDashboardData Controller Started");
 
-      // Extract user ID from Cognito claims
-      const cognitoSub = event.requestContext.authorizer.claims.sub;
-
-      if (!cognitoSub) {
-        return this.createResponse(401, {
-          error: "User ID not found in request",
+      // const cognitoSub = event.requestContext.authorizer.claims.sub;
+      const userId = event.requestContext.authorizer.userId;
+      if (!userId) {
+        this.logger.error(
+          "userId not found in the event. Check authorizer configuration."
+        );
+        return this.createResponse(403, {
+          message: "Forbidden: User identifier not found.",
         });
       }
 
-      const result = await this.dashboardService.getGlobalDashboardData(
-        cognitoSub
-      );
+      const result = await this.dashboardService.getGlobalDashboardData(userId);
 
       if (result.error) {
         return this.createResponse(400, { error: result.message });

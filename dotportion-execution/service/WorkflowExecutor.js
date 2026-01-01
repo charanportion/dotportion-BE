@@ -3,6 +3,7 @@ import { ErrorTypes } from "../utils/errors.js";
 import replaceDynamicValues from "../utils/replaceDynamicValues.js";
 import { MongoClient } from "mongodb";
 import jwt from "jsonwebtoken";
+import { PlatformDatabaseHandler } from "../utils/PlatformDatabaseHandler.js";
 
 export class WorkflowExecutor {
   constructor(secretService) {
@@ -14,12 +15,12 @@ export class WorkflowExecutor {
     this.nodeRegistry.set(type, node);
   }
 
-  async execute(workflow, req) {
+  async execute(workflow, req, logId) {
     const executionId = `exec_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
     console.log(
-      `[${executionId}] Starting workflow execution for workflow: ${workflow._id}`
+      `[${executionId}] Starting workflow execution for workflow: ${workflow._id}, logId: ${logId}`
     );
 
     const nodeMap = new Map(workflow.nodes.map((node) => [node.id, node]));
@@ -109,6 +110,9 @@ export class WorkflowExecutor {
           hasReq: !!req,
         });
 
+        const nodeStartTime = Date.now();
+        const startedAt = new Date().toISOString();
+        const nodeInput = input; // Capture the input before node execution
         input = await handler.call(
           this,
           currentNode,
@@ -117,6 +121,8 @@ export class WorkflowExecutor {
           context,
           workflow
         );
+        const nodeDurationMs = Date.now() - nodeStartTime;
+        const finishedAt = new Date().toISOString();
 
         context[currentNodeId] = { result: input };
         console.log(`[${executionId}] Node execution completed:`, {
@@ -124,7 +130,31 @@ export class WorkflowExecutor {
           nodeType: currentNode.type,
           hasResult: !!input,
           resultType: typeof input,
+          durationMs: nodeDurationMs,
         });
+
+        // Add step to execution log
+        if (logId) {
+          try {
+            this.addStepToLog(logId, {
+              nodeId: currentNodeId,
+              nodeType: currentNode.type,
+              nodeName: currentNode.name || currentNode.type,
+              status: "success",
+              startedAt,
+              finishedAt,
+              durationMs: nodeDurationMs,
+              input: nodeInput, // Use the input that was passed to this node
+              output: { result: input }, // Use the result after node execution
+            });
+          } catch (logError) {
+            console.error(
+              `[${executionId}] Failed to add step to log:`,
+              logError
+            );
+            // Don't fail execution if logging fails
+          }
+        }
 
         // console.log("Node execution result:", input);
 
@@ -185,6 +215,30 @@ export class WorkflowExecutor {
           error: err.message,
           stack: err.stack,
         });
+
+        // Add error step to execution log
+        if (logId) {
+          try {
+            const errorTimestamp = new Date().toISOString();
+            this.addStepToLog(logId, {
+              nodeId: currentNodeId,
+              nodeType: currentNode.type,
+              nodeName: currentNode.name || currentNode.type,
+              status: "error",
+              startedAt: errorTimestamp,
+              finishedAt: errorTimestamp,
+              durationMs: 0,
+              error: err.message,
+            });
+          } catch (logError) {
+            console.error(
+              `[${executionId}] Failed to add error step to log:`,
+              logError
+            );
+            // Don't fail execution if logging fails
+          }
+        }
+
         err.nodeId = currentNodeId;
         err.nodeType = currentNode.type;
         throw err;
@@ -237,6 +291,10 @@ export class WorkflowExecutor {
     return await this.processLogicNode(node, input, req, context);
   }
 
+  async handleMongoDBNode(node, input, req, context, workflow) {
+    return await this.processMongoDBNode(node, input, req, context, workflow);
+  }
+
   async handleDatabaseNode(node, input, req, context, workflow) {
     return await this.processDatabaseNode(node, input, req, context, workflow);
   }
@@ -274,6 +332,7 @@ export class WorkflowExecutor {
       this.handleParametersNode.bind(this)
     );
     this.registerNodeHandler("logic", this.handleLogicNode.bind(this));
+    this.registerNodeHandler("mongodb", this.handleMongoDBNode.bind(this));
     this.registerNodeHandler("database", this.handleDatabaseNode.bind(this));
     this.registerNodeHandler("response", this.handleResponseNode.bind(this));
     this.registerNodeHandler(
@@ -305,12 +364,7 @@ export class WorkflowExecutor {
     for (const sourceConfig of mergePriority
       .map((src) => sources.find((s) => s.from === src))
       .filter(Boolean)) {
-      const {
-        from,
-        required = [],
-        validation = {},
-        mapping = {},
-      } = sourceConfig;
+      const { from, parameters = {} } = sourceConfig;
       let sourceInput;
 
       // Get input from different sources
@@ -340,25 +394,20 @@ export class WorkflowExecutor {
 
       // Process parameter mapping
       const processedInput = {};
+      const missingParams = [];
 
-      const allowedKeys = new Set([
-        ...required,
-        ...Object.keys(validation),
-        ...Object.keys(mapping),
-      ]);
+      Object.entries(parameters).forEach(([paramName, paramConfig]) => {
+        const { required = false } = paramConfig;
+        const value = sourceInput?.[paramName];
 
-      for (const key of allowedKeys) {
-        const sourceKey = mapping[key] || key;
-        if (sourceInput && sourceKey in sourceInput) {
-          processedInput[key] = sourceInput[sourceKey];
-          allCollectedParams.add(key);
+        // Check if parameter exists
+        if (value !== undefined) {
+          processedInput[paramName] = value;
+          allCollectedParams.add(paramName);
+        } else if (required) {
+          // Parameter is required but missing
+          missingParams.push(paramName);
         }
-      }
-
-      // Check required parameters
-      const missingParams = required.filter((param) => {
-        const sourceParam = mapping[param] || param;
-        return !(sourceParam in (sourceInput || {}));
       });
 
       if (missingParams.length > 0) {
@@ -366,64 +415,9 @@ export class WorkflowExecutor {
           source: from,
           type: "MISSING_PARAMS",
           params: missingParams,
-          message: `Missing in ${from}: ${missingParams.join(", ")}`,
-        });
-      }
-
-      // Validate parameters
-      const validationErrors = [];
-      Object.entries(validation).forEach(([param, rules]) => {
-        const sourceParam = mapping[param] || param;
-        const value = processedInput[param];
-
-        if (value === undefined) return;
-
-        if (rules.regex && !new RegExp(rules.regex).test(value)) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "regex",
-            message: rules.message || `${param} failed format validation`,
-          });
-        }
-
-        if (typeof rules.min === "number" && Number(value) < rules.min) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "min",
-            message: `${param} must be ≥ ${rules.min}`,
-          });
-        }
-
-        if (typeof rules.max === "number" && Number(value) > rules.max) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "max",
-            message: `${param} must be ≤ ${rules.max}`,
-          });
-        }
-
-        if (
-          rules.enum &&
-          Array.isArray(rules.enum) &&
-          !rules.enum.includes(value)
-        ) {
-          validationErrors.push({
-            param,
-            value,
-            rule: "enum",
-            message: `${param} must be one of: ${rules.enum.join(", ")}`,
-          });
-        }
-      });
-
-      if (validationErrors.length > 0) {
-        allErrors.push({
-          source: from,
-          type: "VALIDATION_FAILED",
-          errors: validationErrors,
+          message: `Missing required parameters in ${from}: ${missingParams.join(
+            ", "
+          )}`,
         });
       }
 
@@ -435,13 +429,7 @@ export class WorkflowExecutor {
     if (strictMode) {
       const allowedParams = new Set();
       sources.forEach((src) => {
-        [
-          ...(src.required || []),
-          ...Object.keys(src.validation || {}),
-          ...Object.values(src.mapping || {}),
-        ]
-          .filter(Boolean)
-          .forEach((p) => allowedParams.add(p));
+        Object.keys(src.parameters || {}).forEach((p) => allowedParams.add(p));
       });
 
       const unexpectedParams = [...allCollectedParams].filter(
@@ -516,7 +504,7 @@ export class WorkflowExecutor {
     }
   }
 
-  async processDatabaseNode(
+  async processMongoDBNode(
     node,
     input,
     req,
@@ -655,6 +643,78 @@ export class WorkflowExecutor {
       };
     } finally {
       await client.close();
+    }
+  }
+
+  async processDatabaseNode(
+    node,
+    input,
+    req,
+    context,
+    workflow,
+    isRealTime = false
+  ) {
+    const { tenant } = req.params;
+    const {
+      collection,
+      operation,
+      data = {},
+      query = {},
+      options = {},
+    } = node.data;
+
+    if (!collection || !operation) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing collection or operation",
+      };
+    }
+
+    if (!tenant) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Missing tenant in node or input",
+      };
+    }
+
+    // Use platform MongoDB connection with schema management
+    const platformUri = process.env.MONGO_URI;
+    if (!platformUri) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: "Platform MongoDB URI not configured",
+      };
+    }
+
+    const dbHandler = new PlatformDatabaseHandler(platformUri);
+
+    try {
+      await dbHandler.connect(tenant);
+
+      // Ensure collection exists (will auto-create test or check schema for others)
+      await dbHandler.ensureCollectionExists(collection, tenant);
+
+      const resolvedFilter = replaceDynamicValues(query, input, context);
+      const resolvedData = replaceDynamicValues(data, input, context);
+
+      // Execute operation with schema validation
+      const result = await dbHandler.executeOperation(
+        operation,
+        collection,
+        resolvedFilter,
+        resolvedData,
+        options
+      );
+
+      return result;
+    } catch (err) {
+      throw {
+        type: ErrorTypes.EXECUTION_FAILED,
+        message: err.message || "Platform database operation failed",
+        originalError: err.toString(),
+      };
+    } finally {
+      await dbHandler.close();
     }
   }
 
@@ -940,5 +1000,21 @@ export class WorkflowExecutor {
       currentItem,
       loopContext: context.loop,
     };
+  }
+
+  async addStepToLog(logId, stepData) {
+    try {
+      // Import StatsUpdater dynamically to avoid circular dependencies
+      const { StatsUpdater } = await import("../StatsUpdater.js");
+      const statsUpdater = new StatsUpdater();
+
+      await statsUpdater.addStep({
+        logId,
+        stepData,
+      });
+    } catch (error) {
+      console.error("Error adding step to log:", error);
+      // Don't throw error to avoid breaking workflow execution
+    }
   }
 }

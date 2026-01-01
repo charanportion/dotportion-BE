@@ -122,21 +122,29 @@ export class ExecutionController {
       // Execute Workflow and Log Stats
       this.logger.info(`[${requestId}] Starting workflow execution...`);
       const startTime = Date.now();
-      let result, status;
+      let result,
+        status,
+        logId,
+        logFinalized = false;
 
       try {
         this.logger.info(`[${requestId}] Calling workflow executor...`);
-        result = await this.executionService.executeWorkflow(
+        const executionResult = await this.executionService.executeWorkflow(
           workflow,
           requestData
         );
-        status = result?.status < 400 ? "success" : "error";
+        result = executionResult.result;
+        logId = executionResult.logId;
+        logFinalized = executionResult.logFinalized;
+        status = "success"; // Always mark as success if execution completed without throwing an error
         this.logger.info(
           `[${requestId}] Workflow execution completed with status: ${status}`,
           {
             resultStatus: result?.status,
             hasData: !!result?.data,
             hasToken: !!result?.token,
+            logId,
+            logFinalized,
           }
         );
       } catch (executionError) {
@@ -144,12 +152,15 @@ export class ExecutionController {
           `[${requestId}] Workflow execution failed:`,
           executionError
         );
-        status = "error";
+        status = "fail"; // Use "fail" instead of "error" for log status
         result = {
           error: executionError.message,
           details: executionError.details,
           status: executionError.status || 500,
         };
+        // Extract logId and logFinalized from the error if it exists (for failed executions)
+        logId = executionError.logId || logId;
+        logFinalized = executionError.logFinalized || logFinalized;
         throw executionError; // Re-throw to be caught by the main handler
       } finally {
         const durationMs = Date.now() - startTime;
@@ -161,7 +172,9 @@ export class ExecutionController {
           status,
           durationMs,
           requestData,
-          result
+          result,
+          logId,
+          logFinalized
         );
         this.logger.info(`[${requestId}] Stats updated successfully`);
       }

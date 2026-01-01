@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export class ProjectService {
   constructor(dbHandler, logger, ProjectModel) {
     this.dbHandler = dbHandler;
@@ -6,25 +8,33 @@ export class ProjectService {
     this.logger.info(`-->Project Service initialized in Secret Module`);
   }
 
-  async getProjectById(projectId, cognitoSub) {
+  async getProjectById(projectId, userId) {
     try {
       this.logger.info(
-        `-->getProjectById service invoked with projectId:`,
-        projectId
+        `-->getProjectById service invoked with projectId: ${projectId}`
       );
       if (!projectId) {
         this.logger.warn("getProjectById called without a projectId.");
         return { error: true, message: "No Project Id" };
       }
-      if (!cognitoSub) {
-        this.logger.warn("getProjectById called without a cognitoSub.");
+      if (!userId) {
+        this.logger.warn("getProjectById called without a userId.");
         return { error: true, message: "No Owner Data" };
       }
+      this.logger.warn(`userId: ${userId}`);
+
       await this.dbHandler.connectDb();
+
       const project = await this.ProjectModel.findOne({
         _id: projectId,
-        owner: cognitoSub,
+        owner: userId,
       });
+
+      if (!project) {
+        this.logger.warn("No Project Found.");
+        return { error: true, message: "No Project Found" };
+      }
+
       return project;
     } catch (error) {
       this.logger.error("Error in getProjectById service:", error);
@@ -38,20 +48,29 @@ export class ProjectService {
         `-->addSecretToProject service invoked with projectId:`,
         projectId
       );
+
       if (!projectId) {
         this.logger.warn("addSecretToProject called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
+
       if (!secretId) {
         this.logger.warn("addSecretToProject called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
+
       await this.dbHandler.connectDb();
+
       const project = await this.ProjectModel.findOneAndUpdate(
         { _id: projectId },
         { $push: { secrets: secretId } },
         { new: true }
       );
+
+      if (!project) {
+        return { error: true, message: "Project not found" };
+      }
+
       return project;
     } catch (error) {
       this.logger.error("Error in addSecretToProject service:", error);
@@ -65,20 +84,29 @@ export class ProjectService {
         `-->removeSecretFromProject service invoked with projectId:`,
         projectId
       );
+
       if (!projectId) {
         this.logger.warn("removeSecretFromProject called without a projectId.");
         return { error: true, message: "No Project ID" };
       }
+
       if (!secretId) {
         this.logger.warn("removeSecretFromProject called without a secretId.");
         return { error: true, message: "No Secret ID" };
       }
+
       await this.dbHandler.connectDb();
+
       const project = await this.ProjectModel.findOneAndUpdate(
         { _id: projectId },
         { $pull: { secrets: secretId } },
         { new: true }
       );
+
+      if (!project) {
+        return { error: true, message: "Project not found" };
+      }
+
       return project;
     } catch (error) {
       this.logger.error("Error in removeSecretFromProject service:", error);

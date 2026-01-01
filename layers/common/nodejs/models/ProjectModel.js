@@ -12,7 +12,6 @@ const projectSchema = new mongoose.Schema(
     owner: {
       type: String,
       required: true,
-      index: true,
     },
     workflows: [
       {

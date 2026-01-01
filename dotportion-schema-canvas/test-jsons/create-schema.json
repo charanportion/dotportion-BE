@@ -1,0 +1,91 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "userId": "69183f08eaa1bc90c58b7798",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
+    }
+  },
+  "body": {
+    "projectId": "68836caf709af61cf2013959",
+    "dataBase": "platform",
+    "nodes": [
+      {
+        "id": "node-BZQw1-39Skw0Xz0r8Fwxt",
+        "type": "table",
+        "label": "users",
+        "position": {
+          "x": 243.90614605692713,
+          "y": 256.0938539430729
+        },
+        "fields": [
+          {
+            "id": "HU3RU6vk5oZ1hfaiZm13I",
+            "name": "_id",
+            "type": "objectId",
+            "handleType": "both"
+          },
+          {
+            "id": "S-xnFkUFuWiY2RBG0H2JW",
+            "name": "name",
+            "type": "string",
+            "handleType": "none"
+          },
+          {
+            "id": "cF_Iz3F9JEY3gctOhDmcK",
+            "name": "email",
+            "type": "string",
+            "handleType": "none",
+            "required": true,
+            "unique": true
+          },
+          {
+            "id": "fDCzUbignoZ7JCc0ftkyf",
+            "name": "number",
+            "type": "int32",
+            "handleType": "none",
+            "required": true
+          }
+        ],
+        "ui": {
+          "isEditing": true
+        }
+      },
+      {
+        "id": "node-uI5sJ_eBrxX9YVp_WFYIe",
+        "type": "table",
+        "label": "jobs",
+        "position": {
+          "x": 608.6668320780033,
+          "y": 291.78642703821396
+        },
+        "fields": [
+          {
+            "id": "29Vc1njkxXrOqgh0nZAP7",
+            "name": "_id",
+            "type": "objectId",
+            "handleType": "both"
+          },
+          {
+            "id": "j3AqRyHdomdzO1FIFY-nS",
+            "name": "createdBy",
+            "type": "objectId",
+            "handleType": "both"
+          }
+        ],
+        "ui": {
+          "isEditing": true
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-VTz0uqO8im4c89INyFBKC",
+        "sourceNode": "node-BZQw1-39Skw0Xz0r8Fwxt",
+        "targetNode": "node-uI5sJ_eBrxX9YVp_WFYIe",
+        "sourceHandle": "src-HU3RU6vk5oZ1hfaiZm13I",
+        "targetHandle": "tgt-j3AqRyHdomdzO1FIFY-nS"
+      }
+    ]
+  }
+}

@@ -42,20 +42,125 @@ export class WaitlistController {
           "New user detected. Attempting to send confirmation email..."
         );
         const subject = "Thanks for Joining the Waitlist 🎉";
-        const htmlContent = `<body style="font-family: Arial, sans-serif; background-color: #f1f1f1; padding: 20px;">
-            <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
-              <tr>
-                <td style="padding: 20px; text-align: center;">
-                  <h2 style="color: #333333;">🚀 You're on the Waitlist!</h2>
-                  <p style="font-size: 16px; color: #555555;">Hi there,</p>
-                  <p style="font-size: 16px; color: #555555;">Thanks for signing up for early access. We're thrilled to have you on board!</p>
-                  <p style="font-size: 16px; color: #555555;">You’ll be among the first to know when we launch. We’ll keep you updated with exclusive news and early features.</p>
-                  <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-                  <p style="font-size: 13px; color: #999;">Need help or have questions? Just reply to this email — we’d love to hear from you.</p>
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Welcome!</title>
+    <style>
+        /* Basic Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        /* General Styles */
+        body {
+            background-color: #f4f4f4; /* A light grey background to make the white email stand out */
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f4f4f4;">
+
+    <!-- Main Table -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4;">
+                <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+                    <!-- Logo Section -->
+                    <tr>
+                        <td align="center" valign="top" style="padding: 40px 10px 40px 10px;">
+                            <h2 style="font-size: 36px; font-weight: bold; margin: 0; color: #2c3e50; font-family: Arial, sans-serif; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">Dotportion</h2>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
                 </td>
-              </tr>
-            </table>
-          </body>`;
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding: 0 10px 0 10px; background-color: #f4f4f4;">
+                 <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff;">
+                    <!-- Main Content Section -->
+                    <tr>
+                        <td align="center" style="padding: 40px 30px 40px 30px; color: #000000; font-family: Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;">
+                            <h1 style="font-size: 32px; font-weight: bold; margin: 0; color: #000000;">Thanks for joining us!</h1>
+                            <p style="margin: 20px 0 0;">We are absolutely thrilled to have you on board.</p>
+                        </td>
+                    </tr>
+                    <!-- Content Divider -->
+                    <tr>
+                        <td align="center" style="padding: 0 30px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="border-bottom: 1px solid #cccccc;"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Secondary Content Section -->
+                    <tr>
+                        <td align="left" style="padding: 40px 30px 40px 30px; color: #333333; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 25px;">
+                            <p style="margin: 0;">As part of our inner circle, you're now on the priority list. This means you'll get exclusive early access to our product updates, special releases, and other offers before anyone else.</p>
+                            <br>
+                            <p style="margin: 0;">We're putting the final touches on our next big release and can't wait to share it with you. Please be patient, as we'll be in touch with an update very soon.</p>
+                            <br>
+                            <p style="margin: 0;">Welcome to the community!</p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+            <td align="center" style="padding: 20px 10px 40px 10px; background-color: #f4f4f4;">
+                <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+                    <tr>
+                        <td align="center" style="padding: 0 30px 10px 30px; color: #808080; font-family: Arial, sans-serif; font-size: 12px; font-weight: 400; line-height: 18px;">
+                            <p style="margin: 0;">Need help or have questions? Just reply to this email — we’d love to hear from you.</p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
+`;
 
         await this.emailService.sendWaitlistEmail(email, subject, htmlContent);
         this.logger.info("Email sending process initiated for:", email);

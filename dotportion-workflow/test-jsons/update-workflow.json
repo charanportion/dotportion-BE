@@ -1,15 +1,13 @@
 {
   "requestContext": {
     "authorizer": {
-      "claims": {
-        "sub": "51830d0a-c0d1-70e3-bf3d-c5f39af7033b",
-        "email": "cognito@yopmail.com",
-        "name": "cognito"
-      }
+      "userId": "6919c993f2ba6ecf577041a2",
+      "email": "sricharanrayala24@gmail.com",
+      "name": "charan"
     }
   },
   "pathParameters": {
-    "workflowId": "6883dd320c0fc49e0b70378e"
+    "workflowId": "6921c925f9de1f55427d1168"
   },
   "body": {
     "name": "Sample Workflow-updated",

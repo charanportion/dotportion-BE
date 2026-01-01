@@ -118,6 +118,8 @@ export class ExecutionService {
     const requestId = `req_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
+    let logId = null;
+    let logFinalized = false;
     try {
       this.logger.info(
         `[${requestId}] -->executeWorkflow service invoked with workflowId: ${workflow._id}`
@@ -141,30 +143,106 @@ export class ExecutionService {
           : 0,
       });
 
+      // Create execution log at the start
+      this.logger.info(`[${requestId}] Creating execution log...`);
+      logId = await this.statsUpdater.createLog({
+        workflowId: workflow._id,
+        projectId: workflow.project,
+        triggerData: {
+          type: "api",
+          request: {
+            method: requestData.method,
+            path: requestData.path,
+            headers: requestData.headers,
+            queryParams: requestData.queryStringParameters || {},
+            body: requestData.body,
+          },
+        },
+        userPlan: "default", // TODO: Get actual user plan
+      });
+
+      this.logger.info(
+        `[${requestId}] Execution log created with ID: ${logId}`
+      );
+
       this.logger.info(`[${requestId}] Calling workflow executor...`);
-      const result = await this.workflowExecutor.execute(workflow, requestData);
+      const executionResult = await this.workflowExecutor.execute(
+        workflow,
+        requestData,
+        logId
+      );
 
       this.logger.info(
         `[${requestId}] Workflow execution completed successfully:`,
         {
-          hasResult: !!result,
-          resultType: typeof result,
-          status: result?.status,
-          hasData: !!result?.data,
-          hasToken: !!result?.token,
+          hasResult: !!executionResult,
+          resultType: typeof executionResult,
+          status: executionResult?.status,
+          hasData: !!executionResult?.data,
+          hasToken: !!executionResult?.token,
         }
       );
 
-      return result;
+      return { result: executionResult, logId, logFinalized };
     } catch (error) {
       this.logger.error(
         `[${requestId}] Error in executeWorkflow service:`,
         error
       );
+
+      // Finalize log with fail status if log was created
+      if (logId) {
+        this.logger.info(
+          `[${requestId}] Finalizing log with fail status: ${logId}`
+        );
+        try {
+          const finalizeData = {
+            logId,
+            status: "fail",
+            durationMs: 0, // We don't have duration for failed executions
+            response: {
+              statusCode: error.status || 500,
+              body: {
+                error: error.type || ErrorTypes.EXECUTION_FAILED,
+                message: error.message || "Workflow execution failed",
+                details: error.details || {},
+              },
+            },
+          };
+          this.logger.info(
+            `[${requestId}] Finalize data:`,
+            JSON.stringify(finalizeData, null, 2)
+          );
+
+          const finalizeResult = await this.statsUpdater.finalizeLog(
+            finalizeData
+          );
+          this.logger.info(`[${requestId}] Finalize result:`, finalizeResult);
+
+          if (finalizeResult) {
+            logFinalized = true;
+            this.logger.info(
+              `[${requestId}] Log finalized with fail status successfully`
+            );
+          } else {
+            this.logger.error(
+              `[${requestId}] Failed to finalize log with fail status`
+            );
+          }
+        } catch (finalizeError) {
+          this.logger.error(
+            `[${requestId}] Error finalizing log with fail status:`,
+            finalizeError
+          );
+        }
+      }
+
       throw {
         type: ErrorTypes.EXECUTION_FAILED,
         message: error.message || "Workflow execution failed",
         details: error.details || {},
+        logId, // Include logId in the error so it can be used by the controller
+        logFinalized, // Include flag to indicate if log was already finalized
       };
     }
   }
@@ -247,7 +325,15 @@ export class ExecutionService {
     }
   }
 
-  async updateStats(workflow, status, durationMs, requestData, responseData) {
+  async updateStats(
+    workflow,
+    status,
+    durationMs,
+    requestData,
+    responseData,
+    logId,
+    logFinalized = false
+  ) {
     const requestId = `req_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
@@ -264,8 +350,11 @@ export class ExecutionService {
         requestMethod: requestData.method,
         requestPath: requestData.path,
         hasResponseData: !!responseData,
+        logId,
+        logFinalized,
       });
 
+      // Update stats (existing functionality)
       await this.statsUpdater.update({
         projectId: workflow.project,
         workflowId: workflow._id,
@@ -279,6 +368,38 @@ export class ExecutionService {
         },
         response: responseData,
       });
+
+      // Finalize the execution log only if it hasn't been finalized yet
+      // (for failed executions, the log is already finalized in executeWorkflow)
+      if (logId && !logFinalized) {
+        this.logger.info(`[${requestId}] Finalizing execution log: ${logId}`);
+
+        // Map status for logs API: "error" -> "fail", keep others as is
+        const logStatus = status === "error" ? "fail" : status;
+
+        const finalizeData = {
+          logId,
+          status: logStatus,
+          durationMs,
+          response: {
+            statusCode: responseData?.status || 200,
+            body: responseData?.data || responseData,
+          },
+        };
+        this.logger.info(
+          `[${requestId}] Finalize data:`,
+          JSON.stringify(finalizeData, null, 2)
+        );
+
+        const finalizeResult = await this.statsUpdater.finalizeLog(
+          finalizeData
+        );
+        this.logger.info(`[${requestId}] Finalize result:`, finalizeResult);
+
+        if (!finalizeResult) {
+          this.logger.error(`[${requestId}] Failed to finalize execution log`);
+        }
+      }
 
       this.logger.info(`[${requestId}] Stats updated successfully`);
     } catch (error) {
