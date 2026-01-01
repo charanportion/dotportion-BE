@@ -19,9 +19,11 @@
     "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "nodemailer": "^7.0.10",
+    "path": "^0.12.7",
     "require": "^0.4.4"
   },
   "devDependencies": {

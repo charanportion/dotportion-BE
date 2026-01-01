@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 export class EmailService {
   constructor(logger, nodemailer, host, port, auth_mail, auth_password, url) {
     this.logger = logger;
@@ -7,6 +10,7 @@ export class EmailService {
     this.auth_mail = auth_mail;
     this.auth_password = auth_password;
     this.url = url;
+    this.templatesDir = path.join(process.cwd(), "templates");
     this.logger.info("--> EmailService initialized");
   }
 
@@ -45,35 +49,28 @@ export class EmailService {
     }
   }
 
-  async sendOtpEmail(to, otp) {
-    const subject = "Your OTP Code - DotPortion";
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 16px; background-color: #f9f9f9; border-radius: 8px;">
-        <h2 style="color: #333;">Email Verification</h2>
-        <p>Dear user,</p>
-        <p>Your OTP code is:</p>
-        <h1 style="background: #007bff; color: white; display: inline-block; padding: 10px 20px; border-radius: 6px;">${otp}</h1>
-        <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone.</p>
-        <p>Thank you for using DotPortion.</p>
-      </div>
-    `;
+  loadTemplate(templateName, variables = {}) {
+    const filePath = path.join(this.templatesDir, templateName);
+    let html = fs.readFileSync(filePath, "utf-8");
 
-    await this.send(to, subject, htmlContent);
+    // Replace {{VARIABLES}}
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, "g");
+      html = html.replace(regex, value);
+    });
+
+    return html;
   }
 
-  async sendPasswordResetEmail(to, resetPasswordToken) {
-    const subject = "Password Reset Request - DotPortion";
-    const resetLink = `https://${this.url}/reset-password?token=${resetPasswordToken}`;
-
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 16px; background-color: #f9f9f9; border-radius: 8px;">
-        <h2 style="color: #333;">Password Reset Request</h2>
-        <p>Click the link below to reset your password:</p>
-        <a href="${resetLink}" style="display:inline-block; padding:10px 20px; background:#007bff; color:white; text-decoration:none; border-radius:6px;">Reset Password</a>
-        <p>This link is valid for 10 minutes.</p>
-        <p>If you did not request this, you can safely ignore this email.</p>
-      </div>
-    `;
+  async sendOtpEmail(to, otp) {
+    const subject = "Your OTP Code - DotPortion";
+    const htmlContent = this.loadTemplate("otp_sent.html", {
+      OTP_CODE: otp,
+      DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
+      INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
+      YOUTUBE_URL: this.url + "/youtube",
+      LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
+    });
 
     await this.send(to, subject, htmlContent);
   }
@@ -81,33 +78,29 @@ export class EmailService {
   async sendWelcomeMail(to, name = "there") {
     const subject = "Welcome to DotPortion 🎉";
 
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
-        <h2 style="color: #333;">Welcome to DotPortion, ${name}!</h2>
-  
-        <p>We’re excited to have you on board 🚀</p>
-  
-        <p>
-          DotPortion helps you design, manage, and scale your APIs efficiently with
-          intuitive tools and powerful integrations.
-        </p>
-  
-        <p>
-          If you have any questions or need help getting started, feel free to reach out to us.
-        </p>
-  
-        <p style="margin-top: 24px;">
-          Cheers,<br />
-          <strong>The DotPortion Team</strong>
-        </p>
-  
-        <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;" />
-  
-        <p style="font-size: 12px; color: #777;">
-          You’re receiving this email because you successfully signed up for DotPortion.
-        </p>
-      </div>
-    `;
+    const htmlContent = this.loadTemplate("welcome_user.html", {
+      name,
+      APP_URL: "https://beta.dotportion.com/auth/signin",
+      DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
+      INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
+      YOUTUBE_URL: this.url + "/youtube",
+      LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
+    });
+
+    await this.send(to, subject, htmlContent);
+  }
+
+  async sendAccessAcceptedEmail(to, name = "there") {
+    const subject = "Your Access to DotPortion is Approved 🚀";
+
+    const htmlContent = this.loadTemplate("access_accepted.html", {
+      name,
+      APP_URL: "https://beta.dotportion.com/auth/signin",
+      DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
+      INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
+      YOUTUBE_URL: this.url + "/youtube",
+      LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
+    });
 
     await this.send(to, subject, htmlContent);
   }

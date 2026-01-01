@@ -55,7 +55,9 @@ export const handler = async (event) => {
 
     return await authController.signup(event);
   } catch (error) {
-    logger.error("--- UNHANDLED FATAL ERROR in handler ---", error);
+    logger.error(
+      `--- UNHANDLED FATAL ERROR in handler --- ${JSON.stringify(error)}`
+    );
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
