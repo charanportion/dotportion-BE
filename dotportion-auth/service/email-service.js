@@ -1,51 +1,73 @@
 import fs from "fs";
 import path from "path";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+
+const ses = new SESClient({
+  region: process.env.AWS_REGION,
+});
 
 export class EmailService {
-  constructor(logger, nodemailer, host, port, auth_mail, auth_password, url) {
+  constructor(logger, fromEmail, baseUrl) {
     this.logger = logger;
-    this.nodemailer = nodemailer;
-    this.host = host;
-    this.port = port;
-    this.auth_mail = auth_mail;
-    this.auth_password = auth_password;
-    this.url = url;
+    this.fromEmail = fromEmail;
+    this.baseUrl = baseUrl;
     this.templatesDir = path.join(process.cwd(), "templates");
     this.logger.info("--> EmailService initialized");
   }
 
   async send(to, subject, htmlContent) {
     try {
-      const transporter = this.nodemailer.createTransport({
-        host: this.host,
-        port: parseInt(this.port),
-        secure: true, // true for 465
-        auth: {
-          user: this.auth_mail,
-          pass: this.auth_password,
+      const command = new SendEmailCommand({
+        Source: `DotPortion <${this.fromEmail}>`,
+        Destination: {
+          ToAddresses: [to],
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        Message: {
+          Subject: {
+            Data: subject,
+            Charset: "UTF-8",
+          },
+          Body: {
+            Html: {
+              Data: htmlContent,
+              Charset: "UTF-8",
+            },
+          },
+        },
       });
-      console.log(transporter);
 
-      this.logger.info(`Verifying SMTP transporter connection...`);
-      await transporter.verify();
-      this.logger.info(`SMTP transporter verified successfully.`);
+      await ses.send(command);
 
-      this.logger.info(`Attempting to send mail to ${to}`);
-      await transporter.sendMail({
-        from: `DotPortion <${this.auth_mail}>`,
+      this.logger.info(
+        `${JSON.stringify({
+          level: "info",
+          message: "SES email sent successfully",
+          to,
+          subject,
+        })}`
+      );
+    } catch (err) {
+      const sesError = {
+        level: "error",
+        service: "EmailService",
+        action: "SES.sendEmail",
+        message: err?.message || "Unknown SES error",
+        name: err?.name,
+        code: err?.code,
+        fault: err?.fault,
+        time: err?.time,
+        requestId: err?.$metadata?.requestId,
+        httpStatusCode: err?.$metadata?.httpStatusCode,
+        region: process.env.AWS_REGION,
+        fromEmail: this.fromEmail,
         to,
         subject,
-        html: htmlContent,
-      });
+        stack: err?.stack,
+      };
 
-      this.logger.info(`Email sent successfully to ${to}`);
-    } catch (err) {
-      this.logger.error("Nodemailer transport failed:", err);
-      throw err;
+      this.logger.error(`${JSON.stringify(sesError, null, 2)}`);
+
+      throw err; // 🔴 rethrow for upstream handling
     }
   }
 
@@ -53,10 +75,8 @@ export class EmailService {
     const filePath = path.join(this.templatesDir, templateName);
     let html = fs.readFileSync(filePath, "utf-8");
 
-    // Replace {{VARIABLES}}
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, "g");
-      html = html.replace(regex, value);
+      html = html.replace(new RegExp(`{{${key}}}`, "g"), value);
     });
 
     return html;
@@ -68,7 +88,7 @@ export class EmailService {
       OTP_CODE: otp,
       DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
       INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
-      YOUTUBE_URL: this.url + "/youtube",
+      YOUTUBE_URL: this.baseUrl + "/youtube",
       LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
     });
 
@@ -83,7 +103,7 @@ export class EmailService {
       APP_URL: "https://beta.dotportion.com/auth/signin",
       DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
       INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
-      YOUTUBE_URL: this.url + "/youtube",
+      YOUTUBE_URL: this.baseUrl + "/youtube",
       LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
     });
 
@@ -98,7 +118,7 @@ export class EmailService {
       APP_URL: "https://beta.dotportion.com/auth/signin",
       DISCORD_INVITE_URL: "https://discord.gg/vs2q5RMb",
       INSTAGRAM_URL: "https://www.instagram.com/dotportion/",
-      YOUTUBE_URL: this.url + "/youtube",
+      YOUTUBE_URL: this.baseUrl + "/youtube",
       LINKEDIN_URL: "https://www.linkedin.com/company/dotportion/",
     });
 

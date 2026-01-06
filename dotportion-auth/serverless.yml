@@ -27,15 +27,17 @@ provider:
         - "ssm:GetParameter"
       Resource: "arn:aws:ssm:${self:provider.region}:${aws:accountId}:parameter/dotportion/${self:provider.stage}/*"
 
+    - Effect: Allow
+      Action:
+        - "ses:SendEmail"
+        - "ses:SendRawEmail"
+      Resource: "*"
+
   # Environment variables will be available to all your functions
   # It's highly recommended to use a service like AWS Secrets Manager for production
   environment:
     MONGO_URI: ${ssm:/dotportion/${self:provider.stage}/mongo_uri}
     MDataBase: ${self:provider.stage}
-    ZOHO_HOST: ${ssm:/dotportion/${self:provider.stage}/zoho_host}
-    ZOHO_PORT: ${ssm:/dotportion/${self:provider.stage}/zoho_port}
-    AUTH_MAIL: ${ssm:/dotportion/${self:provider.stage}/auth_mail}
-    AUTH_PASSWORD: ${ssm:/dotportion/${self:provider.stage}/auth_password}
     FRONTEND_URL: ${ssm:/dotportion/${self:provider.stage}/frontend_url}
     JWT_SECRET: ${ssm:/dotportion/${self:provider.stage}/jwt_secret}
     GOOGLE_CLIENT_ID: ${ssm:/dotportion/${self:provider.stage}/google_client_id}
@@ -43,6 +45,7 @@ provider:
     GITHUB_CLIENT_ID: ${ssm:/dotportion/${self:provider.stage}/github_client_id}
     GITHUB_CLIENT_SECRET: ${ssm:/dotportion/${self:provider.stage}/github_client_secret}
     BASE_URL: https://${self:custom.domains.${self:provider.stage}}
+    SES_FROM_EMAIL: ${ssm:/dotportion/SES_FROM_EMAIL}
 
 functions:
   authorizer:

@@ -12,10 +12,7 @@ const {
   MONGO_URI,
   MDataBase,
   JWT_SECRET,
-  ZOHO_HOST,
-  ZOHO_PORT,
-  AUTH_MAIL,
-  AUTH_PASSWORD,
+  SES_FROM_EMAIL,
   BASE_URL,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
@@ -27,15 +24,7 @@ const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
-    const emailService = new EmailService(
-      logger,
-      nodemailer,
-      ZOHO_HOST,
-      ZOHO_PORT,
-      AUTH_MAIL,
-      AUTH_PASSWORD,
-      BASE_URL
-    );
+    const emailService = new EmailService(logger, SES_FROM_EMAIL, BASE_URL);
     const oauthService = new OAuthService(
       dbHandler,
       UserModel,

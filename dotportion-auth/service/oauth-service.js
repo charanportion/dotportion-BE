@@ -219,8 +219,12 @@ export class OAuthService {
         syncUserAccessWithWaitlist(user, waitlist);
         await user.save();
       }
-
-      await this.emailService.sendWelcomeMail(email, fullName);
+      this.emailService.sendWelcomeMail(email, fullName).catch((err) => {
+        this.logger.error("Welcome mail failed (OAuth signup)", {
+          email,
+          error: err?.message || err,
+        });
+      });
 
       createLog({
         userId: user._id,
@@ -236,8 +240,6 @@ export class OAuthService {
       }
 
       await user.save();
-
-      await this.emailService.sendWelcomeMail(email, fullName);
 
       createLog({
         userId: user._id,
