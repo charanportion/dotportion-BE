@@ -14,30 +14,13 @@ import { AuthController } from "./controller/auth-controller.js";
 import { EmailService } from "./service/email-service.js";
 import nodemailer from "nodemailer";
 
-const {
-  MONGO_URI,
-  MDataBase,
-  ZOHO_HOST,
-  ZOHO_PORT,
-  AUTH_MAIL,
-  AUTH_PASSWORD,
-  BASE_URL,
-} = process.env;
+const { MONGO_URI, MDataBase, SES_FROM_EMAIL, BASE_URL } = process.env;
 const dbHandler = createDBHandler(MONGO_URI, MDataBase, logger);
 
 export const handler = async (event) => {
   try {
     logger.info("--- Forgot password handler invoked ---");
-    const emailService = new EmailService(
-      logger,
-      nodemailer,
-      ZOHO_HOST,
-      ZOHO_PORT,
-      AUTH_MAIL,
-      AUTH_PASSWORD,
-      BASE_URL,
-      dbHandler
-    );
+    const emailService = new EmailService(logger, SES_FROM_EMAIL, BASE_URL);
     const authService = new AuthService(
       dbHandler,
       logger,
